@@ -1,53 +1,97 @@
-import * as XLSX from "xlsx";
+import * as XLSX from 'xlsx';
+import { PrismaClient } from "@prisma/client";
+import moment from "moment";
 
-// Função para renomear colunas
-function renameColumns(data: any[], renameMap: Record<string, string>): any[] {
-  return data.map((row) => {
-    const newRow: any = {};
-    for (const col in row) {
-      // Verificar se o nome da coluna existe no mapa de renomeação
-      const newColName = renameMap[col] || col;
-      newRow[newColName] = row[col];
-    }
-    return newRow;
-  });
-}
+const results: IData[] = [];
+let i = 0;
 
-// Ler o arquivo Excel
-const workbook: XLSX.WorkBook = XLSX.readFile(
-  "backup/backup-caline-moura/Patient.xlsx"
-);
+const prisma = new PrismaClient();
 
-// Selecionar a primeira planilha
-const sheetName: string = workbook.SheetNames[0];
-const worksheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
-
-// Converter os dados da planilha para JSON
-const data: any[] = XLSX.utils.sheet_to_json(worksheet);
-
-// Definir o mapa de renomeação de colunas
-const renameMap: Record<string, string> = {
-  address: "logradouro",
-  AddressComplement: "complemento",
-  CEP: "cep",
-  city: "cidade",
-  name: "nome",
-  BirthDate: "complemento",
+type IData = {
+  Address: string;
+  AddressNumber: string;
+  BirthDate: string; 
+  CEP: string;
+  City: string;
+  CivilStatus: "NULL" | "S" | "C" | "D" | "V" | "U";
+  CreatedAt: string;
+  DocumentId: string;
+  MobilePhone: string;
+  Name: string;
+  Neighborhood: string;
+  OtherDocumentId: string;
+  OtherPhones: string;
+  Profession: string;
+  Sex: "NULL" | "F" | "M";
+  id: string;
+  state: string;
+  emissor: string;
 };
 
-// Renomear as colunas
-const renamedData = renameColumns(data, renameMap);
+// Leitura do arquivo Excel
+const workbook = XLSX.readFile('./clients.xlsx');
+const sheetName = workbook.SheetNames[0]; // Seleciona a primeira aba
+const sheet = workbook.Sheets[sheetName];
 
-// Criar uma nova planilha com os dados renomeados
-const newWorksheet = XLSX.utils.json_to_sheet(renamedData);
+// Converte o conteúdo da planilha para um formato de JSON
+const rawData = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: '' });
 
-// Substituir a planilha existente no workbook
-workbook.Sheets[sheetName] = newWorksheet;
+rawData.forEach((row, index) => {
+  // Ignora o cabeçalho (primeira linha) e verifica os dados
+  if (index === 0) return;
 
-// Salvar o arquivo atualizado
-XLSX.writeFile(
-  workbook,
-  "backup/backup-caline-moura/newBackup/newPatient.xlsx"
-);
+  const dataRow: IData = {
+    Address: row[0] || '',
+    AddressNumber: row[1] || '',
+    BirthDate: row[2] || '',
+    CEP: row[3] || '',
+    City: row[4] || '',
+    CivilStatus: (row[5] as "NULL" | "S" | "C" | "D" | "V" | "U") || 'NULL',
+    CreatedAt: row[6] || '',
+    DocumentId: row[7] || '',
+    MobilePhone: row[8] || '',
+    Name: row[9] || '',
+    Neighborhood: row[10] || '',
+    OtherDocumentId: row[11] || '',
+    OtherPhones: row[12] || '',
+    Profession: row[13] || '',
+    Sex: (row[14] as "NULL" | "F" | "M") || 'NULL',
+    id: row[15] || '',
+    state: row[16] || '',
+    emissor: row[17] || '',
+  };
 
-console.log("Colunas renomeadas com sucesso!");
+  // Processa os dados
+  const [rg, emissor] = dataRow.DocumentId.split(" ");
+  dataRow.DocumentId = rg || '';
+  dataRow.emissor = emissor || '';
+  
+  const date = moment(dataRow.BirthDate, "DD/MM/YYYY");
+  dataRow.BirthDate = date.isValid() ? date.toISOString() : '';
+
+  results.push(dataRow);
+  i++;
+});
+
+// Salvando os dados no banco de dados
+(async () => {
+  await prisma.pacientes.createMany({
+    data: results.map((result) => ({
+      nome: result.Name,
+      nascimento: result.BirthDate ?? null,
+      unidade_id: 84,
+      bairro: result.Neighborhood,
+      cep: result.CEP,
+      cidade: result.City ?? null,
+      cpf: result.OtherDocumentId,
+      complemento: result.Address,
+      estado: result.state,
+      genero: result.Sex,
+      logradouro: result.Address,
+      rg: result.DocumentId,
+      orgao_emissor: result.emissor,
+      telefone: result.MobilePhone,
+      numero: result.AddressNumber,
+    })),
+  });
+})();
