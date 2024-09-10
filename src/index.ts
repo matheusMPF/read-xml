@@ -30,7 +30,7 @@ type IData = {
 
 // Leitura do arquivo Excel
 const workbook = XLSX.readFile("./clients.xlsx");
-const sheetName = workbook.SheetNames[0]; // Seleciona a primeira aba
+const sheetName = workbook.SheetNames[0];
 const sheet = workbook.Sheets[sheetName];
 
 // Converte o conteúdo da planilha para um formato de JSON

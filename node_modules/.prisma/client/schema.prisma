@@ -1,0 +1,1466 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model agenda_produto {
+  id         Int  @id @default(autoincrement())
+  agenda_id  Int
+  produto_id Int
+  unidade_id Int?
+
+  @@index([agenda_id], map: "agenda_id")
+  @@index([unidade_id], map: "agenda_produto_unidade_idx")
+  @@index([produto_id], map: "produto_id")
+}
+
+model agendas {
+  id                Int             @id @default(autoincrement())
+  data_hora         DateTime?       @db.DateTime(0)
+  data_hora_fim     DateTime        @db.DateTime(0)
+  tipo              agendas_tipo    @default(dbgenerated("(AMBULATORIAL)"))
+  medico_id         Int
+  produto_id        Int
+  especialidade_id  Int?
+  agenda_aplicativo Int?            @default(0)
+  unidade_id        Int?
+  inativo           Int?            @default(0)
+  agenda_id_old     Int?
+  created_at        DateTime        @default(now()) @db.DateTime(0)
+  deleted_at        DateTime?       @db.DateTime(0)
+  deleted_by        Int?
+  updated_at        DateTime        @default(now()) @db.DateTime(0)
+  unidades          unidades?       @relation(fields: [unidade_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "agenda_unidade")
+  usetDeletedBy     user_admin?     @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  especialidades    especialidades? @relation(fields: [especialidade_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_agenda_especialidade")
+  medicos           medicos         @relation(fields: [medico_id], references: [id], onUpdate: Restrict, map: "fk_agenda_medico")
+  produtos          produtos        @relation(fields: [produto_id], references: [id], onUpdate: Restrict, map: "fk_agenda_produto")
+
+  @@index([medico_id], map: "agenda_medico")
+  @@index([unidade_id], map: "agenda_unidade_idx")
+  @@index([especialidade_id], map: "fk_agenda_especialidade")
+  @@index([produto_id], map: "fk_produto_agenda_idx")
+  @@index([deleted_by], map: "agendas_deleted_by_fkey")
+}
+
+model agendas_pacientes {
+  id                     Int                      @id @default(autoincrement())
+  agenda_id              Int
+  paciente_id            Int
+  convenio_id            Int
+  plano_id               Int
+  retorno                Boolean                  @default(false)
+  produto_id             Int
+  agendamento_app        Int                      @default(0)
+  unidade_id             Int
+  inativo                Int                      @default(0)
+  appteleconsulta        Int                      @default(0)
+  teleconsulta           Int                      @default(0)
+  agenda_paciente_id_old Int?
+  code                   String?
+  created_at             DateTime                 @default(now()) @db.DateTime(0)
+  deleted_at             DateTime?                @db.DateTime(0)
+  deleted_by             Int?
+  updated_at             DateTime                 @default(now()) @db.DateTime(0)
+  user_admin             user_admin?              @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  clinic                 unidades                 @relation(fields: [unidade_id], references: [id], onUpdate: NoAction)
+  doctor_message_shipped doctor_message_shipped[]
+
+  @@index([agenda_id], map: "agenda_idx")
+  @@index([unidade_id], map: "agenda_paciente_unidade_idx")
+  @@index([convenio_id], map: "convenio_idx")
+  @@index([paciente_id], map: "paciente_idx")
+  @@index([plano_id], map: "plano_idx")
+  @@index([deleted_by], map: "agendas_pacientes_deleted_by_fkey")
+}
+
+model anexo_formulario {
+  id                       Int                   @id @default(autoincrement())
+  formulario_preenchido_id Int
+  path                     String?               @db.Text
+  data_hora                DateTime?             @db.DateTime(0)
+  unidade_id               Int
+  anexo_formulario_id_old  Int?
+  created_at               DateTime              @default(now()) @db.DateTime(0)
+  deleted_at               DateTime?             @db.DateTime(0)
+  deleted_by               Int?
+  updated_at               DateTime              @default(now()) @db.DateTime(0)
+  user_admin               user_admin?           @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  form_filled              formulario_preenchido @relation(fields: [formulario_preenchido_id], references: [id], onUpdate: NoAction)
+  clinic                   unidades              @relation(fields: [unidade_id], references: [id], onUpdate: NoAction)
+
+  @@index([deleted_by], map: "anexo_formulario_deleted_by_fkey")
+  @@index([formulario_preenchido_id], map: "anexo_formulario_formulario_preenchido_id_fkey")
+  @@index([unidade_id], map: "anexo_formulario_unidade_id_fkey")
+}
+
+model atendcontinuado {
+  id                 Int  @id @default(autoincrement())
+  unidade_id         Int
+  paciente_id        Int
+  atendimento_id     Int
+  agenda_paciente_id Int?
+  produto_id         Int
+
+  @@index([agenda_paciente_id], map: "atendcont_ag_paciente")
+  @@index([atendimento_id], map: "atendcont_atendimento")
+  @@index([paciente_id], map: "atendcont_paciente")
+  @@index([produto_id], map: "atendcont_produto")
+  @@index([unidade_id], map: "atendcont_unidade")
+}
+
+model atendcontinuado_atendimento_produto {
+  id                     Int @id @default(autoincrement())
+  unidade_id             Int
+  atendimento_produto_id Int @unique(map: "atendimento_produto")
+  atendcontinuado_id     Int
+
+  @@index([atendcontinuado_id], map: "atendcontinuado")
+  @@index([unidade_id], map: "unidade")
+}
+
+model atendimento_produto {
+  id                          Int                              @id @default(autoincrement())
+  produto_id                  Int?
+  atendimento_id              Int?
+  quantidade                  String?                          @db.VarChar(45)
+  preco                       String?                          @db.VarChar(45)
+  desconto                    Float?                           @default(0) @db.Float
+  justificativa               String?                          @db.VarChar(200)
+  convenio_id                 Int?
+  status_caixa                atendimento_produto_status_caixa @default(dbgenerated("(PENDENTE)"))
+  unidade_id                  Int?
+  cortesia                    Int?                             @default(0)
+  senha                       String?                          @db.VarChar(100)
+  data_validade_senha         DateTime?                        @db.Date
+  guia_operadora              String?                          @db.VarChar(50)
+  tecnica_utilizada           Int
+  via_acesso                  Int
+  porcentagem                 Decimal                          @default(0.00) @db.Decimal(5, 2)
+  integrated_datafin          Int?                             @db.TinyInt
+  valor_processado            Float?                           @db.Float
+  valor_liberado              Float?                           @db.Float
+  valor_glosa                 Float?                           @db.Float
+  codigo_glosa                Int?
+  accredited_doctor_id        Int?
+  billed_at                   DateTime?
+  expires_at                  DateTime?
+  paid_at                     DateTime?
+  assignment_product_history  assignment_product_history[]
+  doctor                      medicos?                         @relation(fields: [accredited_doctor_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  doctor_payment_products     doctor_payment_products[]
+  invoice_assignment_products invoice_assignment_product[]
+
+  @@index([atendimento_id], map: "atendimento_produto_idx")
+  @@index([unidade_id], map: "atendimento_produto_unidade_idx")
+  @@index([produto_id], map: "produto_atendimento_idx")
+  @@index([accredited_doctor_id], map: "atendimento_produto_accredited_doctor_id_fkey")
+}
+
+model assignment_product_history {
+  id                    Int                              @id @default(autoincrement())
+  user_id               Int
+  clinic_id             Int
+  assignment_id         Int
+  assignment_product_id Int
+  product_id            Int
+  quantity              Int
+  price                 Float
+  discount              Float
+  observation           String?                          @db.VarChar(200)
+  status                atendimento_produto_status_caixa @default(dbgenerated("(PENDENTE)"))
+  created_at            DateTime                         @default(now()) @db.DateTime(0)
+  updated_at            DateTime                         @default(now()) @db.DateTime(0)
+  deleted_at            DateTime?                        @db.DateTime(0)
+  deleted_by            Int?
+  assignment            atendimentos                     @relation(fields: [assignment_id], references: [id], onUpdate: NoAction)
+  assignmentProducts    atendimento_produto              @relation(fields: [assignment_product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  clinic                unidades                         @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  userDeleted           user_admin?                      @relation("UserDeleted", fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  product               produtos                         @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+  userCreated           user_admin                       @relation("UserCreated", fields: [user_id], references: [usu_id], onUpdate: NoAction)
+
+  @@index([assignment_id], map: "assignment_product_history_assignment_id_fkey")
+  @@index([assignment_product_id], map: "assignment_product_history_assignment_product_id_fkey")
+  @@index([clinic_id], map: "assignment_product_history_clinic_id_fkey")
+  @@index([deleted_by], map: "assignment_product_history_deleted_by_fkey")
+  @@index([product_id], map: "assignment_product_history_product_id_fkey")
+  @@index([user_id], map: "assignment_product_history_user_id_fkey")
+}
+
+model atendimentos {
+  id                          Int                          @id @default(autoincrement())
+  unidade_id                  Int?
+  data_hora                   DateTime?                    @db.DateTime(0)
+  codigo                      Int?
+  tipo_consulta               Int?
+  tipo_saida                  Int?
+  guia                        String?                      @db.VarChar(100)
+  paciente_id                 Int?
+  agenda_paciente_id          Int?
+  data_emissao                DateTime?                    @db.DateTime(0)
+  tipo_paciente               String?                      @db.VarChar(50)
+  duracao                     DateTime?                    @db.Time(0)
+  data_final                  DateTime?                    @db.DateTime(0)
+  tipo_guia                   String?                      @db.VarChar(45)
+  inativo                     Int?                         @default(0)
+  preferencia                 String?                      @db.VarChar(50)
+  triagem                     String?                      @db.VarChar(50)
+  senha                       String?                      @db.VarChar(100)
+  data_validade_senha         DateTime?                    @db.Date
+  indicacao_acidente          String?                      @db.VarChar(45)
+  recem_nascido               Int?
+  classificacao               Int?
+  ubspsf                      String?                      @db.Text
+  acd                         String?                      @db.Text
+  atendimento_id_old          Int?
+  medico_solicitante_id       Int?
+  matricula                   String?                      @db.VarChar(50)
+  guia_operadora              String?                      @db.VarChar(50)
+  is_external_invoice         Boolean?                     @default(false)
+  assignment_code_unified     assignment_code_unified[]
+  assignment_product_history  assignment_product_history[]
+  invoice_assignment_products invoice_assignment_product[]
+
+  @@index([agenda_paciente_id], map: "agenda_pa_idx")
+  @@index([unidade_id], map: "atendimentos_unidade")
+  @@index([medico_solicitante_id], map: "medico_solicitante_id")
+  @@index([paciente_id], map: "paciente_atendimento_idx")
+}
+
+model assignment_code_unified {
+  id            Int          @id @default(autoincrement())
+  clinic_id     Int
+  assignment_id Int
+  patient_id    Int
+  code          String
+  created_at    DateTime     @default(now()) @db.DateTime(0)
+  updated_at    DateTime     @default(now()) @db.DateTime(0)
+  deleted_at    DateTime?    @db.DateTime(0)
+  deleted_by    Int?
+  assignment    atendimentos @relation(fields: [assignment_id], references: [id], onUpdate: NoAction)
+  clinic        unidades     @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  userDeleted   user_admin?  @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  patient       pacientes    @relation(fields: [patient_id], references: [id], onUpdate: NoAction)
+
+  @@index([assignment_id], map: "assignment_code_unified_assignment_id_fkey")
+  @@index([clinic_id], map: "assignment_code_unified_clinic_id_fkey")
+  @@index([deleted_by], map: "assignment_code_unified_deleted_by_fkey")
+  @@index([patient_id], map: "assignment_code_unified_patient_id_fkey")
+}
+
+model caixa {
+  id                          Int      @id @default(autoincrement())
+  unidade_id                  Int?
+  data_hora                   DateTime @db.DateTime(0)
+  total                       Float    @db.Float
+  quantidade_forma_pagamentos Int
+  nome_pagador                String?  @db.VarChar(200)
+  cpf_pagador                 String?  @db.VarChar(15)
+  inativo                     Int      @default(0)
+
+  @@index([unidade_id], map: "caixa_unidade")
+}
+
+model invoice {
+  id                Int            @id @default(autoincrement())
+  clinic_id         Int
+  assignment_id     Int?
+  price             Float          @db.Float
+  observation       String?        @db.Text
+  status_invoice    status_invoice
+  payer_name        String?
+  payer_cpf         String?
+  finset_account_id Int?
+  is_enabled        Boolean        @default(true)
+  created_at        DateTime       @default(now()) @db.DateTime(0)
+  updated_at        DateTime       @default(now()) @db.DateTime(0)
+  deleted_at        DateTime?      @db.DateTime(0)
+  deleted_by        Int?
+  nf_url            String?
+}
+
+model invoice_assignment_product {
+  id                    Int                 @id @default(autoincrement())
+  clinic_id             Int
+  invoice_id            Int
+  assignment_product_id Int
+  assignment_id         Int
+  price                 Float
+  quantity              Int
+  discount              Float
+  created_at            DateTime            @default(now()) @db.DateTime(0)
+  updated_at            DateTime            @default(now()) @db.DateTime(0)
+  deleted_at            DateTime?           @db.DateTime(0)
+  deleted_by            Int?
+  assignment            atendimentos        @relation(fields: [assignment_id], references: [id], onUpdate: NoAction)
+  assignmentProducts    atendimento_produto @relation(fields: [assignment_product_id], references: [id], onUpdate: NoAction)
+  clinic                unidades            @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  userDeleted           user_admin?         @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([assignment_id], map: "invoice_assignment_product_assignment_id_fkey")
+  @@index([assignment_product_id], map: "invoice_assignment_product_assignment_product_id_fkey")
+  @@index([clinic_id], map: "invoice_assignment_product_clinic_id_fkey")
+  @@index([deleted_by], map: "invoice_assignment_product_deleted_by_fkey")
+}
+
+model invoice_payment {
+  id                Int       @id @default(autoincrement())
+  clinic_id         Int
+  invoice_id        Int
+  price_paid        Float     @db.Float
+  card_fee          Float     @default(0) @db.Float
+  payment_method_id Int
+  installments      Int       @default(1)
+  payment_date      DateTime  @db.DateTime(0)
+  credit_date       DateTime  @db.DateTime(0)
+  finset_id         Int?
+  is_enabled        Boolean   @default(true)
+  created_at        DateTime  @default(now()) @db.DateTime(0)
+  updated_at        DateTime  @default(now()) @db.DateTime(0)
+  deleted_at        DateTime? @db.DateTime(0)
+  deleted_by        Int?
+
+  @@index([payment_method_id], map: "invoice_payment_payment_method_id_fkey")
+}
+
+model caixa_atendimento_produto {
+  id                     Int  @id @default(autoincrement())
+  unidade_id             Int?
+  atendimento_produto_id Int
+  caixa_id               Int
+
+  @@index([unidade_id], map: "caixa_atendimento_produto_unidade")
+}
+
+model caixa_parcela {
+  id             Int       @id @default(autoincrement())
+  unidade_id     Int?
+  data           DateTime  @db.Date
+  caixa_id       Int
+  valor          Float     @db.Float
+  parcelas       Int       @default(1)
+  tipo_pagamento String    @db.VarChar(50)
+  banco_bandeira String?   @db.VarChar(50)
+  observacao     String?   @db.VarChar(300)
+  acrescimo      Float     @default(0.00) @db.Float
+  data_credito   DateTime? @db.Date
+  data_cadastro  DateTime? @db.Date
+  codigo         String?   @db.VarChar(20)
+  inativo        Int       @default(0)
+
+  @@index([caixa_id], map: "caixa_id")
+  @@index([unidade_id], map: "caixa_parcela_unidade")
+}
+
+model cidades {
+  id        Int     @id @default(autoincrement())
+  nome      String? @db.VarChar(120)
+  estado_id Int?
+
+  @@index([estado_id], map: "fk_Cidade_estado")
+}
+
+model cobertura {
+  id         Int @id @default(autoincrement())
+  medico_id  Int
+  produto_id Int
+  unidade_id Int
+
+  @@unique([medico_id, produto_id], map: "medico_id")
+  @@index([produto_id], map: "fk_cobertura_produto")
+  @@index([unidade_id], map: "fk_cobertura_unidade")
+}
+
+model convenios {
+  id                    Int       @id @default(autoincrement())
+  unidade_id            Int
+  razao_social          String    @db.VarChar(40)
+  nome_fantasia         String    @db.VarChar(40)
+  cnpj                  String    @db.VarChar(20)
+  inativo               Boolean   @default(false)
+  ans                   String?   @db.VarChar(6)
+  dias_retorno          Int?
+  img                   String?   @db.Text
+  codigo_credenciamento String?   @db.VarChar(45)
+  particular            Int       @default(0)
+  convenio_id_old       Int?
+  id_externo            Int?
+  matricula             Int?
+  exigir_matricula      Boolean?  @default(false)
+  guia_principal        Int?
+  exigir_guia           Boolean?  @default(false)
+  guia_operadora        Int?
+  codigo_operadora      String?   @db.VarChar(50)
+  reembolso             Boolean   @default(false)
+  created_at            DateTime  @default(now()) @db.DateTime(0)
+  deleted_at            DateTime? @db.DateTime(0)
+  deleted_by            Int?
+  is_required_cpf       Boolean?  @default(false)
+  updated_at            DateTime  @default(now()) @db.DateTime(0)
+  affiliate_id          Int?
+  payment_days          Int       @default(0)
+  auto_increment        Int?
+}
+
+model credenciamentos {
+  id          Int @id @default(autoincrement())
+  convenio_id Int
+  medico_id   Int
+  plano_id    Int
+  unidade_id  Int
+
+  @@index([convenio_id], map: "credenciamento_convenio")
+  @@index([medico_id], map: "credenciamento_medico")
+  @@index([plano_id], map: "credenciamento_plano")
+  @@index([unidade_id], map: "credenciamento_unidade")
+}
+
+model dominio_produto {
+  id           Int     @id @default(autoincrement())
+  unidade_id   Int?
+  produto_id   Int?
+  convenio_id  Int?
+  dominio_id   Int?
+  preco        String? @db.VarChar(10)
+  preco_custo  String? @db.VarChar(30)
+  nome_externo String  @db.VarChar(200)
+  inativo      Int     @default(0)
+
+  @@index([convenio_id], map: "convenio_dominio_idx")
+  @@index([unidade_id], map: "dominio_produto_unidade")
+  @@index([dominio_id], map: "dominio_tabela_idx")
+  @@index([produto_id], map: "produto_dominio_idx")
+}
+
+model especialidades {
+  id                   Int         @id @default(autoincrement())
+  unidade_id           Int
+  nome                 String      @db.VarChar(40)
+  inativo              Int         @default(0)
+  tiss                 String?     @db.VarChar(20)
+  especialidade_id_old Int?
+  created_at           DateTime    @default(now()) @db.DateTime(0)
+  deleted_at           DateTime?   @db.DateTime(0)
+  deleted_by           Int?
+  updated_at           DateTime    @default(now()) @db.DateTime(0)
+  agendas              agendas[]
+  user_admin           user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([deleted_by], map: "especialidades_deleted_by_fkey")
+}
+
+model especialidades_medicos {
+  id               Int  @id @default(autoincrement())
+  unidade_id       Int?
+  medico_id        Int?
+  especialidade_id Int?
+
+  @@index([especialidade_id], map: "especialidade_idx")
+  @@index([unidade_id], map: "especialidades_medicos_unidade")
+  @@index([medico_id], map: "medicos_idx")
+}
+
+model estados {
+  id   Int     @id @default(autoincrement())
+  nome String? @db.VarChar(75)
+  uf   String? @db.VarChar(5)
+  pais Int?
+
+  @@index([pais], map: "fk_Estado_pais")
+}
+
+model estoque {
+  id            Int               @id @default(autoincrement())
+  produto_id    Int
+  documento     String            @db.VarChar(255)
+  no_pedido     String?           @db.VarChar(255)
+  lote          String?           @db.VarChar(255)
+  data_validade String?           @db.VarChar(255)
+  data_estoque  DateTime          @db.Date
+  valor         Int?              @db.MediumInt
+  quantidade    Int               @db.MediumInt
+  saldo         Int               @db.MediumInt
+  movimento     estoque_movimento @default(dbgenerated("(SAIDA)"))
+  created_at    DateTime?         @default(now()) @db.DateTime(0)
+  updated_at    DateTime?         @db.DateTime(0)
+  produtos      produtos          @relation(fields: [produto_id], references: [id], onUpdate: Restrict, map: "estoque_produto_id")
+
+  @@index([produto_id], map: "estoque_produto_id")
+}
+
+model estoque_pedidos {
+  id         Int                   @id @default(autoincrement())
+  unidade_id Int
+  descricao  String?               @db.VarChar(255)
+  status     estoque_pedido_status
+  produtos   String                @db.Text
+  created_at DateTime?             @default(now()) @db.DateTime(0)
+}
+
+model formas_pagamentos {
+  id                Int                              @id @default(autoincrement())
+  unidade_id        Int?                             @default(0)
+  descricao         String                           @db.VarChar(100)
+  bandeira          String?                          @db.VarChar(30)
+  imagem            String?                          @db.VarChar(200)
+  taxa              Float?                           @db.Float
+  dias_para_credito Int?                             @default(0)
+  inativo           Int                              @default(0)
+  tipo_operacao     formas_pagamentos_tipo_operacao? @default(dbgenerated("(AVISTA)"))
+  created_at        DateTime?                        @default(now()) @db.DateTime(0)
+  updated_at        DateTime?                        @db.DateTime(0)
+  finset_id         Int?
+  unidades          unidades?                        @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "forma_pagamento_unidade")
+
+  @@index([unidade_id], map: "unidade_id")
+}
+
+model formulario_preenchido {
+  id                           Int                @id @default(autoincrement())
+  unidade_id                   Int?
+  medico_id                    Int?
+  atendimento_id               Int?
+  paciente_id                  Int?
+  data_hora                    DateTime?          @db.DateTime(0)
+  formulario_id                Int?
+  json_form                    String?            @db.Text
+  inativo                      Int?               @default(0)
+  formulario_preenchido_id_old Int?
+  anexo_formulario             anexo_formulario[]
+
+  @@index([atendimento_id], map: "form_atendimento_idx")
+  @@index([formulario_id], map: "form_form_idx")
+  @@index([medico_id], map: "form_medico_idx")
+  @@index([paciente_id], map: "form_paciente_idx")
+  @@index([unidade_id], map: "formulario_preenchido_unidade")
+}
+
+model formulario_preenchido_old {
+  id                           Int       @id @default(autoincrement())
+  unidade_id                   Int?
+  medico_id                    Int?
+  atendimento_id               Int?
+  paciente_id                  Int?
+  data_hora                    DateTime? @db.DateTime(0)
+  formulario_id                Int?
+  json_form                    String?   @db.Text
+  inativo                      Int?      @default(0)
+  formulario_preenchido_id_old Int?
+
+  @@index([atendimento_id], map: "form_atendimento_idx")
+  @@index([formulario_id], map: "form_form_idx")
+  @@index([medico_id], map: "form_medico_idx")
+  @@index([paciente_id], map: "form_paciente_idx")
+  @@index([unidade_id], map: "formulario_preenchido_unidade")
+}
+
+model formularios {
+  id                Int     @id @default(autoincrement())
+  unidade_id        Int?
+  nome              String? @db.VarChar(45)
+  json              String? @db.Text
+  nome_impressao    String? @db.VarChar(150)
+  inativo           Int?    @default(0)
+  categoria         String  @default(dbgenerated("(DIVERSOS)")) @db.VarChar(50)
+  manter_preenchido String? @db.Text
+  formulario_id_old Int?
+
+  @@index([unidade_id], map: "formularios_unidade")
+}
+
+model fornecedores {
+  id                 Int       @id @default(autoincrement())
+  unidade_id         Int
+  name               String    @db.VarChar(255)
+  cnpj               String    @db.VarChar(14)
+  address            String?   @db.Text
+  district           String?   @db.VarChar(255)
+  city               String?   @db.VarChar(255)
+  state              String?   @db.VarChar(255)
+  zip_code           String?   @db.VarChar(255)
+  phone              String?   @db.VarChar(255)
+  email              String?   @db.VarChar(255)
+  contact_name       String?   @db.VarChar(255)
+  delivery_days      Int       @db.UnsignedSmallInt
+  payment_conditions String?   @db.VarChar(255)
+  created_at         DateTime? @default(now()) @db.DateTime(0)
+  updated_at         DateTime? @db.DateTime(0)
+  unidades           unidades  @relation(fields: [unidade_id], references: [id], onUpdate: Restrict, map: "fornecedore_unidade")
+
+  @@index([unidade_id], map: "fornecedore_unidade")
+}
+
+model guiagrupo {
+  id         Int    @id @default(autoincrement())
+  unidade_id Int
+  nome       String @db.VarChar(200)
+  tipo       String @db.VarChar(10)
+  inativo    Int    @default(0)
+
+  @@index([unidade_id], map: "unidade_id")
+}
+
+model guiagrupo_guiaproduto {
+  id             Int @id @default(autoincrement())
+  guiagrupo_id   Int
+  guiaproduto_id Int
+  unidade_id     Int
+
+  @@index([guiagrupo_id], map: "guiagrupo_id")
+  @@index([guiaproduto_id], map: "guiaproduto_id")
+  @@index([unidade_id], map: "unidade_id")
+}
+
+model guiaprodutos {
+  id         Int     @id @default(autoincrement())
+  unidade_id Int?
+  nome       String  @db.VarChar(200)
+  tuss       String? @db.VarChar(10)
+  tipo       String  @db.VarChar(10)
+  inativo    Int     @default(0)
+
+  @@index([unidade_id], map: "guiaprodutos_unidade")
+}
+
+model guiasolicitacao {
+  id             Int      @id @default(autoincrement())
+  unidade_id     Int
+  atendimento_id Int
+  data_hora      DateTime @default(now()) @db.DateTime(0)
+
+  @@index([atendimento_id], map: "atendimento_id")
+  @@index([unidade_id], map: "unidade_id")
+}
+
+model guiasolicitacao_guiaprodutos {
+  id                 Int @id @default(autoincrement())
+  unidade_id         Int
+  guiasolicitacao_id Int
+  guiaproduto_id     Int
+  quantidade         Int
+
+  @@index([guiaproduto_id], map: "guiaproduto_id")
+  @@index([guiasolicitacao_id], map: "guiasolicitacao_id")
+  @@index([unidade_id], map: "unidade_id")
+}
+
+model header_footer {
+  id         Int     @id @default(autoincrement())
+  header     String? @db.Text
+  footer     String? @db.Text
+  foto       String? @db.VarChar(500)
+  unidade_id Int?
+
+  @@index([unidade_id], map: "unidade_header_foot_idx")
+}
+
+model integracoes {
+  id             Int       @id
+  tabela         String    @db.VarChar(20)
+  chave_primaria Int
+  data           DateTime? @db.Timestamp(0)
+  integrado      String?   @default(dbgenerated("(N)")) @db.VarChar(1)
+}
+
+model intervalos {
+  id        Int    @id @default(autoincrement())
+  descricao String @db.VarChar(200)
+  minutos   Int
+}
+
+model log {
+  idlog      Int       @id @default(autoincrement())
+  usuario_id Int?
+  rota       String?   @db.VarChar(120)
+  dados      String?   @db.Text
+  unidade_id Int?
+  data_hora  DateTime? @db.DateTime(0)
+
+  @@index([unidade_id], map: "log_unidade_idx")
+  @@index([usuario_id], map: "log_usuario_idx")
+}
+
+model logerroteleconsulta {
+  id           Int    @id @default(autoincrement())
+  ocorrencia   String @db.Text
+  json_request String @db.Text
+}
+
+model lote {
+  id          Int       @id @default(autoincrement())
+  unidade_id  Int?
+  data        DateTime? @db.DateTime(0)
+  status      String?   @db.VarChar(45)
+  convenio_id Int?
+  lot         Int?
+  protocol    String?   @db.VarChar(45)
+
+  @@index([convenio_id], map: "lote_convenio_idx")
+  @@index([unidade_id], map: "lote_unidade")
+}
+
+model lote_atendimento {
+  id             Int  @id @default(autoincrement())
+  unidade_id     Int?
+  atendimento_id Int?
+  lote_id        Int?
+
+  @@index([atendimento_id], map: "atendimento_lote_idx")
+  @@index([unidade_id], map: "lote_atendimento_unidade")
+  @@index([lote_id], map: "lote_idx")
+}
+
+model medicamentos {
+  id           Int    @id @default(autoincrement())
+  descricao    String @db.VarChar(200)
+  medida_id    Int
+  via_id       Int
+  intervalo_id Int
+  unidade_id   Int
+  inativo      Int    @default(0)
+
+  @@index([intervalo_id], map: "medicamentos_intevalos")
+  @@index([medida_id], map: "medicamentos_medidas")
+  @@index([unidade_id], map: "medicamentos_unidades")
+  @@index([via_id], map: "medicamentos_vias")
+}
+
+model medicos {
+  id                      Int                      @id @default(autoincrement())
+  unidade_id              Int
+  nome                    String                   @db.VarChar(80)
+  cpf                     String?                  @db.VarChar(20)
+  crm                     String?                  @db.VarChar(15)
+  id_corporativo          String?                  @db.VarChar(20)
+  email                   String?                  @db.VarChar(80)
+  telefone                String?                  @db.VarChar(45)
+  imposto_nf              Float?                   @default(0) @db.Float
+  json_segunda            String?                  @db.Text
+  json_terca              String?                  @db.Text
+  json_quarta             String?                  @db.Text
+  json_quinta             String?                  @db.Text
+  json_sexta              String?                  @db.Text
+  json_sabado             String?                  @db.Text
+  json_domingo            String?                  @db.Text
+  conselho                String?                  @db.VarChar(12)
+  uf_conselho             String?                  @db.VarChar(2)
+  inativo                 Boolean                  @default(false)
+  data_inicio_agenda      DateTime?                @db.Date
+  data_fim_agenda         DateTime?                @db.Date
+  foto                    String?                  @db.LongText
+  atendimento             Int?
+  logo                    String?                  @db.LongText
+  usu_id                  Int?                     @unique
+  whatsapp                Int                      @default(0)
+  whatsapp_endereco       Boolean?                 @default(true)
+  whatsapp_parabens       Int                      @default(0)
+  porcentagem             Decimal                  @default(0.00) @db.Decimal(5, 2)
+  porcentagem_con         Decimal                  @default(0.00) @db.Decimal(5, 2)
+  porcentagem_exa         Decimal                  @default(0.00) @db.Decimal(5, 2)
+  porcentagem_lab         Decimal                  @default(0.00) @db.Decimal(5, 2)
+  mensagem_parabens       String?                  @db.VarChar(255)
+  id_externo              Int?
+  features                String?                  @db.LongText
+  numero_rqe              String?                  @db.VarChar(20)
+  created_at              DateTime                 @default(now()) @db.DateTime(0)
+  deleted_at              DateTime?                @db.DateTime(0)
+  deleted_by              Int?
+  is_requesting_physician Boolean?                 @default(false)
+  updated_at              DateTime                 @default(now()) @db.DateTime(0)
+  permissions             String?                  @db.VarChar(255)
+  whatsapp_con            medicos_whatsapp_con     @default(dbgenerated("(NONE)"))
+  whatsapp_exa            medicos_whatsapp_exa     @default(dbgenerated("(NONE)"))
+  agendas                 agendas[]
+  atendimento_produto     atendimento_produto[]
+  doctor_message_shipped  doctor_message_shipped[]
+  doctor_payment          doctor_payment[]
+  userDeletedBy           user_admin?              @relation("UserDeletedBy", fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([cpf], map: "cpf")
+  @@index([deleted_by], map: "medicos_deleted_by_fkey")
+}
+
+model doctor_message_shipped {
+  id                  Int               @id @default(autoincrement())
+  clinic_id           Int
+  doctor_id           Int
+  schedule_patient_id Int
+  from                String
+  to                  String
+  message             String            @db.Text
+  created_at          DateTime          @default(now()) @db.DateTime(0)
+  clinic              unidades          @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  doctor              medicos           @relation(fields: [doctor_id], references: [id], onUpdate: NoAction)
+  schedule_patient    agendas_pacientes @relation(fields: [schedule_patient_id], references: [id], onUpdate: NoAction)
+
+  @@index([clinic_id], map: "doctor_message_shipped_clinic_id_fkey")
+  @@index([doctor_id], map: "doctor_message_shipped_doctor_id_fkey")
+  @@index([schedule_patient_id], map: "doctor_message_shipped_schedule_patient_id_fkey")
+}
+
+model doctor_payment {
+  id                      Int                       @id @default(autoincrement())
+  clinic_id               Int
+  doctor_id               Int
+  value                   Float
+  protocol                String
+  status                  doctor_payment_status
+  file_id                 Int
+  observation             String?
+  created_at              DateTime                  @default(now()) @db.DateTime(0)
+  updated_at              DateTime                  @default(now()) @db.DateTime(0)
+  deleted_at              DateTime?                 @db.DateTime(0)
+  deleted_by              Int?
+  clinic                  unidades                  @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  userDeletedBy           user_admin?               @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  doctorPayed             medicos                   @relation(fields: [doctor_id], references: [id], onUpdate: NoAction)
+  file                    files                     @relation(fields: [file_id], references: [id], onUpdate: NoAction)
+  doctor_payment_products doctor_payment_products[]
+
+  @@index([clinic_id], map: "doctor_payment_clinic_id_fkey")
+  @@index([deleted_by], map: "doctor_payment_deleted_by_fkey")
+  @@index([doctor_id], map: "doctor_payment_doctor_id_fkey")
+  @@index([file_id], map: "doctor_payment_file_id_fkey")
+}
+
+model doctor_payment_products {
+  id                    Int                 @id @default(autoincrement())
+  clinic_id             Int
+  doctor_payment_id     Int
+  assignment_product_id Int
+  rule_id               Int?
+  tax                   Float
+  payment_value         Float
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @default(now())
+  deleted_at            DateTime?           @db.DateTime(0)
+  deleted_by            Int?
+  assignment_products   atendimento_produto @relation(fields: [assignment_product_id], references: [id], onUpdate: NoAction)
+  clinic                unidades            @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  userDeletedBy         user_admin?         @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  doctor_payment        doctor_payment      @relation(fields: [doctor_payment_id], references: [id], onUpdate: NoAction)
+
+  @@index([assignment_product_id], map: "doctor_payment_products_assignment_product_id_fkey")
+  @@index([clinic_id], map: "doctor_payment_products_clinic_id_fkey")
+  @@index([deleted_by], map: "doctor_payment_products_deleted_by_fkey")
+  @@index([doctor_payment_id], map: "doctor_payment_products_doctor_payment_id_fkey")
+}
+
+model files {
+  id             Int              @id @default(autoincrement())
+  clinic_id      Int
+  file_name      String
+  file_size      Int
+  mimetype       String
+  file_url       String
+  description    String?
+  is_public      Boolean          @default(true)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @default(now())
+  deleted_at     DateTime?        @db.DateTime(0)
+  deleted_by     Int?
+  doctor_payment doctor_payment[]
+  clinic         unidades         @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  userDeletedBy  user_admin?      @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([clinic_id], map: "files_clinic_id_fkey")
+  @@index([deleted_by], map: "files_deleted_by_fkey")
+}
+
+model medicos_formularios {
+  id            Int  @id @default(autoincrement())
+  unidade_id    Int?
+  medico_id     Int?
+  formulario_id Int?
+  index         Int?
+
+  @@index([formulario_id], map: "form_form_idx")
+  @@index([medico_id], map: "form_medico_idx")
+  @@index([unidade_id], map: "medicos_formularios_unidade")
+}
+
+model medidas {
+  id        Int    @id @default(autoincrement())
+  descricao String @db.VarChar(200)
+}
+
+model mensagens {
+  id                 Int     @id @default(autoincrement())
+  unidade_id         Int
+  paciente_id        Int
+  telefone           String  @db.VarChar(15)
+  agenda_paciente_id Int
+  resposta           String? @db.VarChar(100)
+}
+
+model ocorrencia_atendimento_produto {
+  id             Int                     @id @default(autoincrement())
+  unidade_id     Int?
+  atendimento_id Int
+  status         String                  @db.VarChar(50)
+  data_hora      DateTime                @db.DateTime(0)
+  produto_id     Int
+  tipo           tipo_ocorrencia_produto @default(dbgenerated("(MEDICINA)"))
+
+  @@index([unidade_id], map: "ocorrencia_atendimento_produto_unidade")
+}
+
+model ocorrencias {
+  id          Int       @id @default(autoincrement())
+  unidade_id  Int?
+  data_hora   DateTime? @db.DateTime(0)
+  status      String?   @db.VarChar(40)
+  motivo      String?   @db.Char(255)
+  agenda_id   Int?
+  paciente_id Int?
+
+  @@index([agenda_id], map: "agenda_idx")
+  @@index([status], map: "index3")
+  @@index([unidade_id], map: "ocorrencias_unidade")
+  @@index([paciente_id], map: "paciente_idx")
+}
+
+model orcamento {
+  id          Int      @id @default(autoincrement())
+  unidade_id  Int?
+  paciente_id Int
+  data_hora   DateTime @db.DateTime(0)
+
+  @@index([unidade_id], map: "orcamento_unidade")
+}
+
+model orcamento_produto {
+  id           Int    @id @default(autoincrement())
+  unidade_id   Int?
+  produto_id   Int
+  orcamento_id Int
+  desconto     Float? @db.Float
+  quantidade   Int
+  preco        Float  @db.Float
+
+  @@index([unidade_id], map: "orcamento_produto_unidade")
+}
+
+model paciente_anexo {
+  id          Int      @id @default(autoincrement())
+  paciente_id Int
+  unidade_id  Int
+  nome        String   @db.VarChar(150)
+  path        String   @db.Text
+  data_hora   DateTime @db.DateTime(0)
+
+  @@index([unidade_id], map: "fk_unidade_paciente_anexo")
+  @@index([paciente_id], map: "paciente")
+}
+
+model paciente_unidade {
+  id          Int  @id @default(autoincrement())
+  paciente_id Int?
+  unidade_id  Int?
+
+  @@index([paciente_id], map: "paciente_unidade2_idx")
+  @@index([unidade_id], map: "unidade_paciente2_idx")
+}
+
+model pacientes {
+  id                      Int                       @id @default(autoincrement())
+  unidade_id              Int
+  nome                    String                    @db.VarChar(200)
+  nascimento              DateTime?                 @db.Date
+  genero                  String?                   @db.VarChar(15)
+  user_id                 Int?
+  email                   String?                   @db.VarChar(60)
+  telefone                String?                   @db.VarChar(16)
+  telefone2               String?                   @db.VarChar(16)
+  cpf                     String?                   @db.VarChar(15)
+  numero                  String?                   @db.VarChar(10)
+  logradouro              String?                   @db.VarChar(100)
+  bairro                  String?                   @db.VarChar(30)
+  cidade                  String?                   @db.VarChar(30)
+  estado                  String?                   @db.VarChar(2)
+  cep                     String?                   @db.VarChar(12)
+  complemento             String?                   @db.VarChar(150)
+  numero_carteira         String?                   @db.VarChar(20)
+  validade_carteira       DateTime?                 @db.Date
+  nome_mae                String?                   @db.VarChar(150)
+  rg                      String?                   @db.VarChar(45)
+  orgao_emissor           String?                   @db.VarChar(45)
+  estado_civil            String?                   @db.VarChar(45)
+  foto                    String?                   @db.LongText
+  convenio_id             Int?
+  plano_id                Int?
+  inativo                 Int                       @default(0)
+  alergia                 String?                   @db.VarChar(600)
+  cartao_nacional_saude   String?                   @db.VarChar(45)
+  codigo_externo          String?                   @db.VarChar(45)
+  paciente_id_old         Int?
+  id_externo              Int?
+  tipo_usuario            pacientes_tipo_usuario?   @default(dbgenerated("(NONE)"))
+  obs_tipo                String?                   @db.VarChar(200)
+  profissao               String?                   @db.VarChar(50)
+  created_at              DateTime                  @default(now()) @db.DateTime(0)
+  deleted_at              DateTime?                 @db.DateTime(0)
+  deleted_by              Int?
+  updated_at              DateTime                  @default(now()) @db.DateTime(0)
+  height                  Int?
+  update_hash_code        String?
+  weight                  Float?
+  assignment_code_unified assignment_code_unified[]
+  user_admin              user_admin?               @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([deleted_by], map: "pacientes_deleted_by_fkey")
+}
+
+model painel {
+  id         String   @id @db.VarChar(36)
+  unidade_id Int
+  nome       String   @db.VarChar(100)
+  token      String?  @db.VarChar(200)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @default(now()) @db.DateTime(0)
+  video_url  String?
+
+  @@index([unidade_id], map: "painel_unidade")
+}
+
+model paises {
+  id    Int     @id @default(autoincrement())
+  nome  String? @db.VarChar(60)
+  sigla String? @db.VarChar(10)
+}
+
+model pesquisa_resposta {
+  id          Int       @id
+  comentario  String?   @db.Text
+  pesquisa_id Int?
+  data_hora   DateTime? @db.DateTime(0)
+
+  @@index([pesquisa_id], map: "pesquisa_resposta_idx")
+}
+
+model pesquisas {
+  id         Int       @id @default(autoincrement())
+  nota       String?   @db.VarChar(20)
+  agenda_id  Int?
+  comentario String?   @db.Text
+  data_hora  DateTime? @db.DateTime(0)
+
+  @@index([agenda_id], map: "agenda_idx")
+}
+
+model planos {
+  id           Int         @id @default(autoincrement())
+  unidade_id   Int
+  nome         String      @db.VarChar(40)
+  convenio_id  Int
+  plano_id_old Int?
+  created_at   DateTime    @default(now()) @db.DateTime(0)
+  deleted_at   DateTime?   @db.DateTime(0)
+  deleted_by   Int?
+  updated_at   DateTime    @default(now()) @db.DateTime(0)
+  user_admin   user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([deleted_by], map: "planos_deleted_by_fkey")
+}
+
+model produtos {
+  id                         Int                          @id @default(autoincrement())
+  unidade_id                 Int?
+  nome                       String                       @db.VarChar(70)
+  descricao                  String                       @db.VarChar(400)
+  inativo                    Int?                         @default(0)
+  cbhpm                      String?                      @db.VarChar(8)
+  tuss                       String?                      @db.VarChar(10)
+  tipo                       tipo_produtos
+  amb                        String?                      @db.VarChar(10)
+  produto_id_old             Int?
+  ncm                        String?
+  fornecedor_id              Int?                         @db.UnsignedInt
+  apresentacao               String?                      @db.VarChar(255)
+  unidades_compra            Int?                         @db.UnsignedMediumInt
+  unidades_aplicacao         Int?                         @db.UnsignedMediumInt
+  estoque_min                Int?                         @db.UnsignedMediumInt
+  reposicao_dias             Int?                         @db.UnsignedSmallInt
+  estoque_reposicao          Int?                         @db.UnsignedMediumInt
+  medida_id                  Int?
+  via_id                     Int?
+  intervalo_id               Int?
+  created_at                 DateTime                     @default(now()) @db.DateTime(0)
+  deleted_at                 DateTime?                    @db.DateTime(0)
+  deleted_by                 Int?
+  updated_at                 DateTime                     @default(now()) @db.DateTime(0)
+  product_class_id           Int?
+  agendas                    agendas[]
+  assignment_product_history assignment_product_history[]
+  estoque                    estoque[]
+  productKitMain             product_kit[]                @relation("MainProductId")
+  productKit                 product_kit[]                @relation("ProductId")
+  user_admin                 user_admin?                  @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  product_class              product_class?               @relation(fields: [product_class_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([fornecedor_id], map: "fornecedor_id")
+  @@index([unidade_id], map: "produtos_unidade")
+  @@index([deleted_by], map: "produtos_deleted_by_fkey")
+  @@index([product_class_id], map: "produtos_product_class_id_fkey")
+}
+
+model product_class {
+  id         Int         @id @default(autoincrement())
+  clinic_id  Int
+  name       String      @db.VarChar(70)
+  created_at DateTime    @default(now()) @db.DateTime(0)
+  updated_at DateTime    @default(now()) @db.DateTime(0)
+  deleted_at DateTime?   @db.DateTime(0)
+  deleted_by Int?
+  clinic     unidades    @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  produtos   produtos[]
+
+  @@index([clinic_id], map: "product_class_clinic_id_fkey")
+  @@index([deleted_by], map: "product_class_deleted_by_fkey")
+}
+
+model produtos_produtosgrupo {
+  id               Int @id @default(autoincrement())
+  unidade_id       Int
+  produto_id       Int
+  produtosgrupo_id Int
+
+  @@index([produto_id], map: "produto")
+  @@index([produtosgrupo_id], map: "produtosgrupo")
+  @@index([unidade_id], map: "unidade")
+}
+
+model produtosgrupo {
+  id         Int    @id @default(autoincrement())
+  unidade_id Int
+  nome       String @db.VarChar(200)
+  inativo    Int    @default(0)
+}
+
+model salas {
+  id         String @id @db.VarChar(36)
+  unidade_id Int?
+  nome       String @db.VarChar(100)
+  painel_id  String @db.VarChar(36)
+
+  @@index([unidade_id], map: "salas_unidade")
+}
+
+model tabela_dominio {
+  id     Int     @id @default(autoincrement())
+  codigo Int?
+  nome   String? @db.VarChar(100)
+}
+
+model unidades {
+  id                            Int                          @id @default(autoincrement())
+  fantasia                      String                       @db.VarChar(30)
+  razao_social                  String                       @db.VarChar(60)
+  cnpj                          String                       @db.VarChar(20)
+  cin                           String?                      @db.VarChar(20)
+  cnes                          String                       @db.VarChar(20)
+  endereco                      String?                      @db.VarChar(100)
+  fone                          String?                      @db.VarChar(16)
+  email                         String?                      @db.VarChar(60)
+  clinica_individual            String?                      @default(dbgenerated("(N)")) @db.VarChar(1)
+  profissional_resp_nome        String?                      @db.VarChar(30)
+  profissional_resp_cpf         String?                      @db.VarChar(20)
+  profissional_resp_fone        String?                      @db.VarChar(20)
+  profissional_resp_email       String?                      @db.VarChar(60)
+  profissional_resp_crm         String?                      @db.VarChar(20)
+  profissional_resp_conselho    String?                      @db.VarChar(12)
+  profissional_resp_uf_conselho String?                      @db.VarChar(2)
+  logo                          String?                      @db.Text
+  estado                        String?                      @default(dbgenerated("(PE)")) @db.VarChar(45)
+  cidade                        String?                      @default(dbgenerated("(Recife)")) @db.VarChar(150)
+  relatorio                     Int?
+  bairro                        String?                      @db.VarChar(200)
+  numero                        Int?
+  complemento                   String?                      @db.VarChar(200)
+  cep                           String?                      @db.VarChar(20)
+  urgencia                      Int                          @default(0)
+  percentual_cartao             Decimal?                     @default(0.00) @db.Decimal(5, 2)
+  financeiro                    Int?
+  id_externo                    Int?
+  datafin_password              String?                      @db.VarChar(255)
+  assumir_taxa_cartao           unidades_assumir_taxa_cartao @default(dbgenerated("(N)"))
+  permissions                   String?                      @db.VarChar(255)
+  agendas                       agendas[]
+  agendas_pacientes             agendas_pacientes[]
+  anexo_formulario              anexo_formulario[]
+  assignment_code_unified       assignment_code_unified[]
+  assignment_product_history    assignment_product_history[]
+  doctor_message_shipped        doctor_message_shipped[]
+  doctor_payment                doctor_payment[]
+  doctor_payment_products       doctor_payment_products[]
+  files                         files[]
+  formas_pagamentos             formas_pagamentos[]
+  fornecedores                  fornecedores[]
+  invoice_assignment_products   invoice_assignment_product[]
+  product_class                 product_class[]
+  product_kits                  product_kit[]
+}
+
+model affiliates {
+  id             Int                      @id @default(autoincrement())
+  clinic_id      Int
+  fantasy_name   String
+  corporate_name String
+  cpf_cnpj       String
+  created_at     DateTime                 @default(now()) @db.DateTime(0)
+  updated_at     DateTime                 @default(now()) @db.DateTime(0)
+  deleted_at     DateTime?                @db.DateTime(0)
+  deleted_by     Int?
+  type_document  type_document_affiliates @default(dbgenerated("(CNPJ)"))
+  cnes           String?
+}
+
+model cid {
+  id         Int       @id @default(autoincrement())
+  name       String
+  cod        String
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  updated_at DateTime  @default(now()) @db.DateTime(0)
+  deleted_at DateTime? @db.DateTime(0)
+  deleted_by Int?
+}
+
+model user_admin {
+  usu_id                            Int                          @id @default(autoincrement())
+  unidade_id                        Int
+  usu_nome                          String?                      @db.VarChar(120)
+  usu_email                         String?                      @db.VarChar(100)
+  usu_senha                         String?                      @db.VarChar(100)
+  usu_cpf                           String?                      @db.VarChar(45)
+  usu_profissao                     String?                      @db.VarChar(50)
+  usu_acesso                        String?                      @db.Text
+  usu_app                           Boolean                      @default(false)
+  inativo                           Boolean                      @default(false)
+  privacy_policy_accepted_at        DateTime?                    @db.DateTime(0)
+  created_at                        DateTime                     @default(now()) @db.DateTime(0)
+  deleted_at                        DateTime?                    @db.DateTime(0)
+  deleted_by                        Int?
+  updated_at                        DateTime                     @default(now()) @db.DateTime(0)
+  agendas                           agendas[]
+  agendas_pacientes                 agendas_pacientes[]
+  anexo_formulario                  anexo_formulario[]
+  assignment_code_unified           assignment_code_unified[]
+  assignmentProductHistoryDeletedBy assignment_product_history[] @relation("UserDeleted")
+  assignmentProductHistoryUserId    assignment_product_history[] @relation("UserCreated")
+  doctor_payment                    doctor_payment[]
+  doctor_payment_products           doctor_payment_products[]
+  especialidades                    especialidades[]
+  files                             files[]
+  invoice_assignment_products       invoice_assignment_product[]
+  doctorDeletedBy                   medicos[]                    @relation("UserDeletedBy")
+  pacientes                         pacientes[]
+  planos                            planos[]
+  product_class                     product_class[]
+  product_kits                      product_kit[]
+  produtos                          produtos[]
+  user_admin                        user_admin?                  @relation("DeletedBy", fields: [deleted_by], references: [usu_id])
+  user                              user_admin[]                 @relation("DeletedBy")
+
+  @@index([unidade_id], map: "user_admin_unidade")
+  @@index([deleted_by], map: "user_admin_deleted_by_fkey")
+}
+
+model usuario {
+  id          Int     @id @default(autoincrement())
+  nome        String  @db.VarChar(30)
+  email       String  @db.VarChar(80)
+  senha       String  @db.VarChar(100)
+  facebook_id String? @db.VarChar(32)
+  firebase_id String? @db.Text
+  paciente_id Int?
+
+  @@index([paciente_id], map: "user_paciente_idx")
+}
+
+model vias {
+  id        Int    @id @default(autoincrement())
+  descricao String @db.VarChar(200)
+}
+
+model product_kit {
+  id              Int         @id @default(autoincrement())
+  clinic_id       Int
+  main_product_id Int
+  product_id      Int
+  quantity        Int         @default(1)
+  created_at      DateTime    @default(now()) @db.Timestamp(0)
+  updated_at      DateTime?   @default(now()) @db.DateTime(0)
+  deleted_at      DateTime?   @db.DateTime(0)
+  deleted_by      Int?
+  clinic          unidades    @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+  user_admin      user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  productKit      produtos    @relation("MainProductId", fields: [main_product_id], references: [id], onUpdate: NoAction)
+  product         produtos    @relation("ProductId", fields: [product_id], references: [id], onUpdate: NoAction)
+
+  @@index([clinic_id], map: "product_kit_clinic_id_fkey")
+  @@index([deleted_by], map: "product_kit_deleted_by_fkey")
+  @@index([main_product_id], map: "product_kit_main_product_id_fkey")
+  @@index([product_id], map: "product_kit_product_id_fkey")
+}
+
+model medico_regras {
+  id         Int       @id @default(autoincrement())
+  unidade_id Int
+  regra_id   Int
+  medico_id  Int
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+}
+
+model notificacoes {
+  id                      Int                  @id @default(autoincrement())
+  unidade_id              Int
+  usuario_id_destinatario Int
+  usuario_id_remetente    Int
+  tipo                    notificacoes_tipo
+  titulo                  String               @db.VarChar(255)
+  mensagem                String               @db.VarChar(255)
+  status                  notificacoes_status? @default(dbgenerated("(ENVIADO)"))
+  lote_repasse_id         String?              @db.VarChar(255)
+  created_at              DateTime             @default(now()) @db.Timestamp(0)
+  updated_at              DateTime?            @default(now()) @db.DateTime(0)
+}
+
+model regras {
+  id                Int                   @id @default(autoincrement())
+  unidade_id        Int
+  nome_regra        String                @db.VarChar(255)
+  tipo_regra        regras_tipo_regra
+  convenios_id      String?               @db.VarChar(255)
+  produtos_id       String?               @db.VarChar(255)
+  tipo_convenio     regras_tipo_convenio?
+  tipo_produto      String?               @db.VarChar(255)
+  porcentagem       Float                 @db.Float
+  data_vigencia     DateTime              @db.Date
+  data_encerramento DateTime              @db.Date
+  inativo           Boolean?              @default(false)
+  created_at        DateTime              @default(now()) @db.Timestamp(0)
+  updated_at        DateTime?             @default(now()) @db.DateTime(0)
+}
+
+enum tipo_produtos {
+  CON
+  DIA
+  EXA
+  HON
+  LAB
+  MAT
+  MED
+  TAX
+}
+
+enum agendas_tipo {
+  AMBULATORIAL
+  CIRURGICA
+  URGENCIA
+  ATENDIMENTO
+}
+
+enum atendimento_produto_status_caixa {
+  PENDENTE
+  EM_ANALISE
+  FATURADO
+  GLOSADO
+  ACATADO
+  CORTESIA
+  NAO_FATURAR
+  QUITADO
+}
+
+enum formas_pagamentos_tipo_operacao {
+  AVISTA
+  DEBITO
+  CREDITO
+}
+
+enum unidades_assumir_taxa_cartao {
+  S
+  N
+}
+
+enum pacientes_tipo_usuario {
+  NONE
+  VIP
+  INDESEJADO
+}
+
+enum regras_tipo_regra {
+  CONVENIO
+  PRODUTO
+  TIPO_CONVENIO
+  TIPO_PRODUTO
+}
+
+enum notificacoes_tipo {
+  MENSAGEM
+  REPASSE
+}
+
+enum regras_tipo_convenio {
+  PARTICULAR
+  CONVENIO
+}
+
+enum notificacoes_status {
+  ENVIADO
+  VISUALIZADO
+  CONFIRMADO
+}
+
+enum tipo_ocorrencia_produto {
+  ENFERMAGEM
+  MEDICINA
+}
+
+enum estoque_movimento {
+  ENTRADA
+  SAIDA
+}
+
+enum estoque_pedido_status {
+  PENDENTE
+  PARCIAL
+  ATENDIDO
+}
+
+enum status_invoice {
+  TO_PAY
+  PAYED
+  CANCELED
+}
+
+enum type_document_affiliates {
+  CPF
+  CNPJ
+}
+
+enum doctor_payment_status {
+  PENDING
+  CONFIRMED
+  PAID
+}
+
+enum medicos_whatsapp_con {
+  NONE
+  APPOINTMENT
+  ORDER_ARRIVAL
+  ORDER_ARRIVAL_TURN
+}
+
+enum medicos_whatsapp_exa {
+  NONE
+  APPOINTMENT
+  ORDER_ARRIVAL
+  ORDER_ARRIVAL_TURN
+}

@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model SubscriptionForm {
+  id                        String                     @id @default(cuid())
+  externalId                String                     @unique @map("formId")
+  title                     String
+  description               String                     @db.Text
+  questionLinkCnpjId        String?
+  eventId                   String
+  event                     Event                      @relation(fields: [eventId], references: [id])
+  isEnabled                 Boolean                    @default(true)
+  subscriptionFormQuestions SubscriptionFormQuestion[]
+
+  @@index([eventId], map: "SubscriptionForm_eventId_fkey")
+}
+
+model SubscriptionFormQuestion {
+  id                 String                   @id @default(cuid())
+  externalId         String                   @map("externalQuestionId")
+  question           String                   @db.Text
+  subscriptionFormId String?
+  SubscriptionForm   SubscriptionForm?        @relation(fields: [subscriptionFormId], references: [id])
+  answers            SubscriptionFormAnswer[]
+
+  @@unique([externalId, subscriptionFormId])
+  @@index([subscriptionFormId], map: "SubscriptionFormQuestion_subscriptionFormId_fkey")
+}
+
+model SubscriptionFormResponse {
+  id              String                   @id @default(cuid())
+  externalId      String                   @unique
+  respondentEmail String?
+  answers         SubscriptionFormAnswer[]
+}
+
+model SubscriptionFormAnswer {
+  id         String                   @id @default(cuid())
+  text       String                   @db.Text
+  responseId String
+  questionId String
+  response   SubscriptionFormResponse @relation(fields: [responseId], references: [id])
+  question   SubscriptionFormQuestion @relation(fields: [questionId], references: [id])
+
+  @@index([questionId], map: "SubscriptionFormAnswer_questionId_fkey")
+  @@index([responseId], map: "SubscriptionFormAnswer_responseId_fkey")
+}
+
+model Participant {
+  id             String               @id @default(cuid())
+  cnpj           String
+  socialReason   String
+  fantasyName    String
+  cep            String?
+  uf             String?
+  city           String?
+  neighborhood   String?
+  street         String?
+  streetNumber   String?
+  type           ParticipantType
+  tier           ParticipantCategory?
+  eventId        String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  staff          ParticipantStaff[]
+  event          Event                @relation(fields: [eventId], references: [id])
+  restaurants    Restaurant[]
+  accommodation  EventAccommodation[]
+  restaurantTier ParticipantCategory?
+  limitStaffs    Int?
+
+  @@index([createdAt])
+  @@index([eventId])
+}
+
+model ParticipantStaff {
+  id                                String                        @id @default(cuid())
+  shortCode                         String?
+  name                              String
+  email                             String
+  cpf                               String?
+  whatsApp                          String
+  jobTitle                          String
+  participantId                     String?
+  userId                            String
+  createdAt                         DateTime                      @default(now())
+  updatedAt                         DateTime                      @updatedAt
+  responsible                       Boolean?
+  participant                       Participant?                  @relation(fields: [participantId], references: [id])
+  user                              User                          @relation(fields: [userId], references: [id])
+  ScanRecordOwner                   ScanRecord[]                  @relation("ScanRecordOwner")
+  ScanRecordTarget                  ScanRecord[]                  @relation("ScanRecordTarget")
+  ParticipantStaffObservationOwner  ParticipantStaffObservation[] @relation("ObservationOwner")
+  ParticipantStaffObservationTarget ParticipantStaffObservation[] @relation("ObservationTarget")
+
+  @@index([createdAt])
+  @@index([participantId], map: "ParticipantStaff_participantId_fkey")
+  @@index([userId], map: "ParticipantStaff_userId_fkey")
+}
+
+model ParticipantStaffObservation {
+  id                       String   @id @default(cuid())
+  participantStaffId       String
+  targetParticipantStaffId String
+  observation              String?
+  hasBought                Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  participantStaff       ParticipantStaff @relation("ObservationOwner", fields: [participantStaffId], references: [id])
+  targetParticipantStaff ParticipantStaff @relation("ObservationTarget", fields: [targetParticipantStaffId], references: [id])
+
+  @@index([targetParticipantStaffId])
+  @@index([participantStaffId])
+}
+
+model Exhibitor {
+  id                        String   @id @default(cuid())
+  standType                 String
+  exhibitorAddressId        String
+  emailMessage              String?
+  email                     String
+  name                      String
+  whatsApp                  String
+  followers                 Int
+  notifyNewSubs             Boolean
+  followVisitation          Boolean
+  notificationParticipation Boolean
+  observation               String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model Event {
+  id                       String     @id @default(cuid())
+  name                     String
+  vacancies                Int?
+  category                 String?
+  eventStartDate           DateTime?
+  eventEndDate             DateTime?
+  accreditationStartDate   DateTime?
+  accreditationEndDate     DateTime?
+  accreditationValue       Float?
+  whatsApp                 String?
+  emailMessage             String?    @db.Text
+  standsAvailable          Int?
+  placeSize                Float?
+  observation              String?    @db.Text
+  schedule                 String?    @db.Text
+  slug                     String     @unique
+  eventColor               EventColor @default(dark)
+  horizontalLogoKey        String?
+  verticalLogoKey          String?
+  sponsorsImgKey           String?
+  promoImgKey              String?
+  cep                      String?
+  uf                       String?
+  city                     String?
+  street                   String?
+  streetNumber             String?
+  eventMapUrl              String?    @db.VarChar(255)
+  defaultLimitUserPerStaff Int?
+
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  form           SubscriptionForm[]
+  participants   Participant[]
+  accommodations EventAccommodation[]
+  restaurant     Restaurant[]
+}
+
+model EventAccommodation {
+  id                   String               @id @default(cuid())
+  name                 String
+  localization         String
+  checkIn              DateTime?
+  checkOut             DateTime?
+  isCourtesy           Boolean?
+  paymentMethod        String?
+  paymentValue         Float?
+  specialSolicitations String?
+  category             ParticipantCategory?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  rooms                Rooms[]
+  event                Event[]
+  participants         Participant[]
+}
+
+model ScanRecord {
+  id                       String         @id @default(cuid())
+  participantStaffId       String
+  targetParticipantStaffId String?
+  type                     ScanRecordType
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+
+  participantStaff       ParticipantStaff  @relation("ScanRecordOwner", fields: [participantStaffId], references: [id])
+  targetParticipantStaff ParticipantStaff? @relation("ScanRecordTarget", fields: [targetParticipantStaffId], references: [id])
+
+  @@index([participantStaffId])
+  @@index([targetParticipantStaffId])
+}
+
+model Rooms {
+  id                   String             @id @default(cuid())
+  type                 String
+  doubleBed            Int?
+  singleBed            Int?
+  value                Float
+  quantity             Int
+  eventAccommodationId String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  EventAccommodation   EventAccommodation @relation(fields: [eventAccommodationId], references: [id])
+
+  @@index([eventAccommodationId], map: "Rooms_eventAccommodationId_fkey")
+}
+
+model Meal {
+  id           String              @id @default(cuid())
+  meal         String
+  days         String
+  category     ParticipantCategory
+  Restaurant   Restaurant          @relation(fields: [restaurantId], references: [id])
+  restaurantId String
+
+  @@index([restaurantId])
+}
+
+model Restaurant {
+  id            String        @id @default(cuid())
+  name          String
+  localization  String
+  isCourtesy    Boolean?
+  isOnLocal     Boolean?
+  paymentMethod String?
+  paymentValue  Float?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  event         Event[]
+  meals         Meal[]
+  participants  Participant[]
+}
+
+model User {
+  id               String             @id @default(cuid())
+  externalId       String?
+  name             String?
+  cpf              String?
+  email            String?            @unique
+  password         String?
+  emailVerified    DateTime?
+  image            String?
+  cellphone        String?
+  telephone        String?
+  username         String?
+  role             UserRole           @default(PARTICIPANT)
+  visitorId        String?
+  representativeId String?
+  clerkId          String?            @unique
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  participantStaff ParticipantStaff[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model EventToEventAccommodation {
+  A String
+  B String
+
+  @@unique([A, B], map: "_EventToEventAccommodation_AB_unique")
+  @@index([B], map: "_EventToEventAccommodation_B_index")
+  @@map("_EventToEventAccommodation")
+}
+
+model EventToRestaurant {
+  A String
+  B String
+
+  @@unique([A, B], map: "_EventToRestaurant_AB_unique")
+  @@index([B], map: "_EventToRestaurant_B_index")
+  @@map("_EventToRestaurant")
+}
+
+enum ParticipantType {
+  EXHIBITOR
+  REPRESENTATIVE
+  ORGANIZER
+  VISITOR
+}
+
+enum ParticipantCategory {
+  A
+  B
+  C
+  D
+  R
+  E
+  O
+}
+
+enum EventColor {
+  dark
+  blue
+  orange
+  green
+  red
+  yellow
+}
+
+enum UserRole {
+  ADMIN
+  PARTICIPANT
+}
+
+enum ScanRecordType {
+  CHECK_IN
+  LUNCH
+  DINNER
+  PROFILE
+}
