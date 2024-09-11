@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { PrismaClient } from "@prisma/client";
 import moment from "moment";
+const fs = require("fs");
 
 const results: IData[] = [];
 let i = 0;
@@ -29,56 +30,28 @@ type IData = {
 };
 
 // Leitura do arquivo Excel
-const workbook = XLSX.readFile("./clients.xlsx");
-const sheetName = workbook.SheetNames[0];
-const sheet = workbook.Sheets[sheetName];
+// const workbook = XLSX.readFile("./clients.xlsx");
+// const sheetName = workbook.SheetNames[0];
+// const sheet = workbook.Sheets[sheetName];
 
 // Converte o conteúdo da planilha para um formato de JSON
-const rawData = XLSX.utils.sheet_to_json<string[]>(sheet, {
-  header: 1,
-  defval: "",
-});
-console.log(rawData);
+// const rawData = XLSX.utils.sheet_to_json<string[]>(sheet, {
+//   header: 1,
+//   defval: "",
+// });
 
-rawData.forEach((row, index) => {
-  // Ignora o cabeçalho (primeira linha) e verifica os dados
-  if (index === 0) return;
-
-  const dataRow: IData = {
-    Address: row[0] || "",
-    AddressNumber: row[1] || "",
-    BirthDate: row[2] || "",
-    CEP: row[3] || "",
-    City: row[4] || "",
-    CivilStatus: (row[5] as "NULL" | "S" | "C" | "D" | "V" | "U") || "NULL",
-    CreatedAt: row[6] || "",
-    DocumentId: row[7] || "",
-    MobilePhone: row[8] || "",
-    Name: row[9] || "",
-    Neighborhood: row[10] || "",
-    OtherDocumentId: row[11] || "",
-    OtherPhones: row[12] || "",
-    Profession: row[13] || "",
-    Sex: (row[14] as "NULL" | "F" | "M") || "NULL",
-    id: row[15] || "",
-    state: row[16] || "",
-    emissor: row[17] || "",
-  };
-
+fs.createReadStream("./Patient.xlsx").on("data", (data: IData) => {
   // Processa os dados
-  const [rg, emissor] = dataRow.DocumentId.split(" ");
-  dataRow.DocumentId = rg || "";
-  dataRow.emissor = emissor || "";
+  const [rg, emissor] = data.DocumentId.split(" ");
+  data.DocumentId = rg || "";
+  data.emissor = emissor || "";
+  const date = moment(data.BirthDate, "DD/MM/YYYY");
+  data.BirthDate = date.isValid() ? date.toISOString() : "";
 
-  const date = moment(dataRow.BirthDate, "DD/MM/YYYY");
-  dataRow.BirthDate = date.isValid() ? date.toISOString() : "";
-
-  results.push(dataRow);
+  results.push(data);
   i++;
-});
-
-// Salvando os dados no banco de dados
-(async () => {
+}).on("end", async () => {
+  // Salvando os dados no banco de dados
   await prisma.pacientes.createMany({
     data: results.map((result) => ({
       nome: result.Name,
@@ -98,4 +71,6 @@ rawData.forEach((row, index) => {
       numero: result.AddressNumber,
     })),
   });
-})();
+});
+
+
