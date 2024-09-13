@@ -92,19 +92,21 @@ const renamedData = renameColumns(data, renameMap);
 const results = renamedData.map((row: any) => {
   // Separar RG e órgão emissor
   const { rg, orgao_emissor } = separarRgEOrgao(row.rg || "");
-  console.log({ rg: rg });
+
+  const numero = row.numero ? String(row.numero) : "";
+  const nascimento = row.nascimento
+    ? moment(row.nascimento, "YYYY-MM-DD").toDate()
+    : null;
 
   return {
     nome: row.nome || "",
-    nascimento: row.nascimento
-      ? moment(row.nascimento, "YYYY-MM-DD").toDate()
-      : null,
-    unidade_id: row.unidade_id || 91,
+    nascimento,
+    unidade_id: 91,
     bairro: row.bairro || "",
     cep: row.cep || "",
     cidade: row.cidade || "",
     cpf: row.cpf || "",
-    numero: row.numero || "",
+    numero,
     logradouro: row.logradouro || "",
     estado: row.estado || "",
     complemento: row.complemento || "",
@@ -126,5 +128,7 @@ const results = renamedData.map((row: any) => {
     console.log("Dados salvos com sucesso!");
   } catch (error) {
     console.error("Erro ao salvar dados:", error);
+  } finally {
+    await prisma.$disconnect();
   }
 })();
