@@ -19,55 +19,57 @@ model agenda_produto {
 }
 
 model agendas {
-  id                Int             @id @default(autoincrement())
-  data_hora         DateTime?       @db.DateTime(0)
-  data_hora_fim     DateTime        @db.DateTime(0)
-  tipo              agendas_tipo    @default(dbgenerated("(AMBULATORIAL)"))
+  id                Int          @id @default(autoincrement())
+  data_hora         DateTime?    @db.DateTime(0)
+  data_hora_fim     DateTime     @db.DateTime(0)
+  tipo              agendas_tipo @default(AMBULATORIAL)
   medico_id         Int
   produto_id        Int
   especialidade_id  Int?
-  agenda_aplicativo Int?            @default(0)
+  agenda_aplicativo Int?         @default(0)
   unidade_id        Int?
-  inativo           Int?            @default(0)
+  inativo           Int?         @default(0)
   agenda_id_old     Int?
-  created_at        DateTime        @default(now()) @db.DateTime(0)
-  deleted_at        DateTime?       @db.DateTime(0)
+  created_at        DateTime     @default(now()) @db.DateTime(0)
+  updated_at        DateTime     @default(now()) @db.DateTime(0)
+  deleted_at        DateTime?    @db.DateTime(0)
   deleted_by        Int?
-  updated_at        DateTime        @default(now()) @db.DateTime(0)
-  unidades          unidades?       @relation(fields: [unidade_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "agenda_unidade")
-  usetDeletedBy     user_admin?     @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  especialidades    especialidades? @relation(fields: [especialidade_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_agenda_especialidade")
-  medicos           medicos         @relation(fields: [medico_id], references: [id], onUpdate: Restrict, map: "fk_agenda_medico")
-  produtos          produtos        @relation(fields: [produto_id], references: [id], onUpdate: Restrict, map: "fk_agenda_produto")
+
+  usetDeletedBy  user_admin?     @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  unidades       unidades?       @relation(fields: [unidade_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "agenda_unidade")
+  especialidades especialidades? @relation(fields: [especialidade_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_agenda_especialidade")
+  medicos        medicos?        @relation(fields: [medico_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_agenda_medico")
+  produtos       produtos        @relation(fields: [produto_id], references: [id], onUpdate: Restrict, map: "fk_agenda_produto")
 
   @@index([medico_id], map: "agenda_medico")
   @@index([unidade_id], map: "agenda_unidade_idx")
   @@index([especialidade_id], map: "fk_agenda_especialidade")
   @@index([produto_id], map: "fk_produto_agenda_idx")
-  @@index([deleted_by], map: "agendas_deleted_by_fkey")
+  @@index([data_hora, inativo])
 }
 
 model agendas_pacientes {
-  id                     Int                      @id @default(autoincrement())
+  id                     Int       @id @default(autoincrement())
   agenda_id              Int
   paciente_id            Int
   convenio_id            Int
   plano_id               Int
-  retorno                Boolean                  @default(false)
+  retorno                Boolean   @default(false)
   produto_id             Int
-  agendamento_app        Int                      @default(0)
+  agendamento_app        Int       @default(0)
   unidade_id             Int
-  inativo                Int                      @default(0)
-  appteleconsulta        Int                      @default(0)
-  teleconsulta           Int                      @default(0)
+  inativo                Int       @default(0)
+  appteleconsulta        Int       @default(0)
+  teleconsulta           Int       @default(0)
   agenda_paciente_id_old Int?
   code                   String?
-  created_at             DateTime                 @default(now()) @db.DateTime(0)
-  deleted_at             DateTime?                @db.DateTime(0)
+  created_at             DateTime  @default(now()) @db.DateTime(0)
+  updated_at             DateTime  @default(now()) @db.DateTime(0)
+  deleted_at             DateTime? @db.DateTime(0)
   deleted_by             Int?
-  updated_at             DateTime                 @default(now()) @db.DateTime(0)
+
   user_admin             user_admin?              @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  clinic                 unidades                 @relation(fields: [unidade_id], references: [id], onUpdate: NoAction)
+  clinic                 unidades                 @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   doctor_message_shipped doctor_message_shipped[]
 
   @@index([agenda_id], map: "agenda_idx")
@@ -75,27 +77,23 @@ model agendas_pacientes {
   @@index([convenio_id], map: "convenio_idx")
   @@index([paciente_id], map: "paciente_idx")
   @@index([plano_id], map: "plano_idx")
-  @@index([deleted_by], map: "agendas_pacientes_deleted_by_fkey")
 }
 
 model anexo_formulario {
-  id                       Int                   @id @default(autoincrement())
+  id                       Int       @id @default(autoincrement())
   formulario_preenchido_id Int
-  path                     String?               @db.Text
-  data_hora                DateTime?             @db.DateTime(0)
+  path                     String?   @db.Text
+  data_hora                DateTime? @db.DateTime(0)
   unidade_id               Int
   anexo_formulario_id_old  Int?
-  created_at               DateTime              @default(now()) @db.DateTime(0)
-  deleted_at               DateTime?             @db.DateTime(0)
+  created_at               DateTime  @default(now()) @db.DateTime(0)
+  updated_at               DateTime  @default(now()) @db.DateTime(0)
+  deleted_at               DateTime? @db.DateTime(0)
   deleted_by               Int?
-  updated_at               DateTime              @default(now()) @db.DateTime(0)
-  user_admin               user_admin?           @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  form_filled              formulario_preenchido @relation(fields: [formulario_preenchido_id], references: [id], onUpdate: NoAction)
-  clinic                   unidades              @relation(fields: [unidade_id], references: [id], onUpdate: NoAction)
 
-  @@index([deleted_by], map: "anexo_formulario_deleted_by_fkey")
-  @@index([formulario_preenchido_id], map: "anexo_formulario_formulario_preenchido_id_fkey")
-  @@index([unidade_id], map: "anexo_formulario_unidade_id_fkey")
+  user_admin  user_admin?           @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  clinic      unidades              @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  form_filled formulario_preenchido @relation(fields: [formulario_preenchido_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model atendcontinuado {
@@ -132,7 +130,7 @@ model atendimento_produto {
   desconto                    Float?                           @default(0) @db.Float
   justificativa               String?                          @db.VarChar(200)
   convenio_id                 Int?
-  status_caixa                atendimento_produto_status_caixa @default(dbgenerated("(PENDENTE)"))
+  status_caixa                atendimento_produto_status_caixa @default(PENDENTE)
   unidade_id                  Int?
   cortesia                    Int?                             @default(0)
   senha                       String?                          @db.VarChar(100)
@@ -140,6 +138,9 @@ model atendimento_produto {
   guia_operadora              String?                          @db.VarChar(50)
   tecnica_utilizada           Int
   via_acesso                  Int
+  billed_at                   DateTime?
+  paid_at                     DateTime?
+  expires_at                  DateTime?
   porcentagem                 Decimal                          @default(0.00) @db.Decimal(5, 2)
   integrated_datafin          Int?                             @db.TinyInt
   valor_processado            Float?                           @db.Float
@@ -147,18 +148,18 @@ model atendimento_produto {
   valor_glosa                 Float?                           @db.Float
   codigo_glosa                Int?
   accredited_doctor_id        Int?
-  billed_at                   DateTime?
-  expires_at                  DateTime?
-  paid_at                     DateTime?
-  assignment_product_history  assignment_product_history[]
-  doctor                      medicos?                         @relation(fields: [accredited_doctor_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  production_doctor_id        Int?
+  initial_hour                String?
+  final_hour                  String?
   doctor_payment_products     doctor_payment_products[]
+  doctor                      medicos?                         @relation(fields: [accredited_doctor_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  doctorProduction            medicos?                         @relation("doctorProduction", fields: [production_doctor_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  assignment_product_history  assignment_product_history[]
   invoice_assignment_products invoice_assignment_product[]
 
   @@index([atendimento_id], map: "atendimento_produto_idx")
   @@index([unidade_id], map: "atendimento_produto_unidade_idx")
   @@index([produto_id], map: "produto_atendimento_idx")
-  @@index([accredited_doctor_id], map: "atendimento_produto_accredited_doctor_id_fkey")
 }
 
 model assignment_product_history {
@@ -169,27 +170,25 @@ model assignment_product_history {
   assignment_product_id Int
   product_id            Int
   quantity              Int
+  value_glossed         Float                            @default(0.00)
+  value_processed       Float                            @default(0.00)
+  value_released        Float                            @default(0.00)
+  value_glossed_code    Int?
   price                 Float
   discount              Float
   observation           String?                          @db.VarChar(200)
-  status                atendimento_produto_status_caixa @default(dbgenerated("(PENDENTE)"))
+  status                atendimento_produto_status_caixa @default(PENDENTE)
   created_at            DateTime                         @default(now()) @db.DateTime(0)
   updated_at            DateTime                         @default(now()) @db.DateTime(0)
   deleted_at            DateTime?                        @db.DateTime(0)
   deleted_by            Int?
-  assignment            atendimentos                     @relation(fields: [assignment_id], references: [id], onUpdate: NoAction)
-  assignmentProducts    atendimento_produto              @relation(fields: [assignment_product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  clinic                unidades                         @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  userDeleted           user_admin?                      @relation("UserDeleted", fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  product               produtos                         @relation(fields: [product_id], references: [id], onUpdate: NoAction)
-  userCreated           user_admin                       @relation("UserCreated", fields: [user_id], references: [usu_id], onUpdate: NoAction)
 
-  @@index([assignment_id], map: "assignment_product_history_assignment_id_fkey")
-  @@index([assignment_product_id], map: "assignment_product_history_assignment_product_id_fkey")
-  @@index([clinic_id], map: "assignment_product_history_clinic_id_fkey")
-  @@index([deleted_by], map: "assignment_product_history_deleted_by_fkey")
-  @@index([product_id], map: "assignment_product_history_product_id_fkey")
-  @@index([user_id], map: "assignment_product_history_user_id_fkey")
+  assignment         atendimentos?       @relation(fields: [assignment_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  product            produtos?           @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  clinic             unidades            @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  assignmentProducts atendimento_produto @relation(fields: [assignment_product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  userCreated        user_admin          @relation("UserCreated", fields: [user_id], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  userDeleted        user_admin?         @relation("UserDeleted", fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model atendimentos {
@@ -197,7 +196,8 @@ model atendimentos {
   unidade_id                  Int?
   data_hora                   DateTime?                    @db.DateTime(0)
   codigo                      Int?
-  tipo_consulta               Int?
+  tipo_consulta               Int?                         @default(4)
+  tipo_atendimento            Int?                         @default(4)
   tipo_saida                  Int?
   guia                        String?                      @db.VarChar(100)
   paciente_id                 Int?
@@ -222,9 +222,12 @@ model atendimentos {
   matricula                   String?                      @db.VarChar(50)
   guia_operadora              String?                      @db.VarChar(50)
   is_external_invoice         Boolean?                     @default(false)
-  assignment_code_unified     assignment_code_unified[]
+  service_character           Int?                         @default(1)
+  clinical_indication         String?                      @db.Text
+  // invoice                     invoice[]
   assignment_product_history  assignment_product_history[]
   invoice_assignment_products invoice_assignment_product[]
+  assignment_code_unified     assignment_code_unified[]
 
   @@index([agenda_paciente_id], map: "agenda_pa_idx")
   @@index([unidade_id], map: "atendimentos_unidade")
@@ -233,24 +236,20 @@ model atendimentos {
 }
 
 model assignment_code_unified {
-  id            Int          @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   clinic_id     Int
   assignment_id Int
   patient_id    Int
   code          String
-  created_at    DateTime     @default(now()) @db.DateTime(0)
-  updated_at    DateTime     @default(now()) @db.DateTime(0)
-  deleted_at    DateTime?    @db.DateTime(0)
+  created_at    DateTime  @default(now()) @db.DateTime(0)
+  updated_at    DateTime  @default(now()) @db.DateTime(0)
+  deleted_at    DateTime? @db.DateTime(0)
   deleted_by    Int?
-  assignment    atendimentos @relation(fields: [assignment_id], references: [id], onUpdate: NoAction)
-  clinic        unidades     @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  userDeleted   user_admin?  @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  patient       pacientes    @relation(fields: [patient_id], references: [id], onUpdate: NoAction)
 
-  @@index([assignment_id], map: "assignment_code_unified_assignment_id_fkey")
-  @@index([clinic_id], map: "assignment_code_unified_clinic_id_fkey")
-  @@index([deleted_by], map: "assignment_code_unified_deleted_by_fkey")
-  @@index([patient_id], map: "assignment_code_unified_patient_id_fkey")
+  clinic      unidades     @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  assignment  atendimentos @relation(fields: [assignment_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  patient     pacientes    @relation(fields: [patient_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  userDeleted user_admin?  @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model caixa {
@@ -276,16 +275,21 @@ model invoice {
   payer_name        String?
   payer_cpf         String?
   finset_account_id Int?
+  nf_url            String?
   is_enabled        Boolean        @default(true)
   created_at        DateTime       @default(now()) @db.DateTime(0)
   updated_at        DateTime       @default(now()) @db.DateTime(0)
   deleted_at        DateTime?      @db.DateTime(0)
   deleted_by        Int?
-  nf_url            String?
+
+  // user_admin                  user_admin?                   @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  // assignment                  atendimentos?                 @relation(fields: [assignment_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // clinic                      unidades                      @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // invoice_payment             invoice_payment[]
 }
 
 model invoice_assignment_product {
-  id                    Int                 @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   clinic_id             Int
   invoice_id            Int
   assignment_product_id Int
@@ -293,19 +297,15 @@ model invoice_assignment_product {
   price                 Float
   quantity              Int
   discount              Float
-  created_at            DateTime            @default(now()) @db.DateTime(0)
-  updated_at            DateTime            @default(now()) @db.DateTime(0)
-  deleted_at            DateTime?           @db.DateTime(0)
+  created_at            DateTime  @default(now()) @db.DateTime(0)
+  updated_at            DateTime  @default(now()) @db.DateTime(0)
+  deleted_at            DateTime? @db.DateTime(0)
   deleted_by            Int?
-  assignment            atendimentos        @relation(fields: [assignment_id], references: [id], onUpdate: NoAction)
-  assignmentProducts    atendimento_produto @relation(fields: [assignment_product_id], references: [id], onUpdate: NoAction)
-  clinic                unidades            @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  userDeleted           user_admin?         @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 
-  @@index([assignment_id], map: "invoice_assignment_product_assignment_id_fkey")
-  @@index([assignment_product_id], map: "invoice_assignment_product_assignment_product_id_fkey")
-  @@index([clinic_id], map: "invoice_assignment_product_clinic_id_fkey")
-  @@index([deleted_by], map: "invoice_assignment_product_deleted_by_fkey")
+  assignmentProducts atendimento_produto @relation(fields: [assignment_product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  assignment         atendimentos        @relation(fields: [assignment_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  userDeleted        user_admin?         @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  clinic             unidades            @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model invoice_payment {
@@ -313,7 +313,7 @@ model invoice_payment {
   clinic_id         Int
   invoice_id        Int
   price_paid        Float     @db.Float
-  card_fee          Float     @default(0) @db.Float
+  card_fee          Float     @default(0.00) @db.Float
   payment_method_id Int
   installments      Int       @default(1)
   payment_date      DateTime  @db.DateTime(0)
@@ -325,7 +325,10 @@ model invoice_payment {
   deleted_at        DateTime? @db.DateTime(0)
   deleted_by        Int?
 
-  @@index([payment_method_id], map: "invoice_payment_payment_method_id_fkey")
+  payment_method formas_pagamentos @relation(fields: [payment_method_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // clinic         unidades          @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // user           user_admin?       @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  // invoice        invoice           @relation(fields: [invoice_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model caixa_atendimento_produto {
@@ -377,34 +380,46 @@ model cobertura {
 }
 
 model convenios {
-  id                    Int       @id @default(autoincrement())
-  unidade_id            Int
-  razao_social          String    @db.VarChar(40)
-  nome_fantasia         String    @db.VarChar(40)
-  cnpj                  String    @db.VarChar(20)
-  inativo               Boolean   @default(false)
-  ans                   String?   @db.VarChar(6)
-  dias_retorno          Int?
-  img                   String?   @db.Text
-  codigo_credenciamento String?   @db.VarChar(45)
-  particular            Int       @default(0)
-  convenio_id_old       Int?
-  id_externo            Int?
-  matricula             Int?
-  exigir_matricula      Boolean?  @default(false)
-  guia_principal        Int?
-  exigir_guia           Boolean?  @default(false)
-  guia_operadora        Int?
-  codigo_operadora      String?   @db.VarChar(50)
-  reembolso             Boolean   @default(false)
-  created_at            DateTime  @default(now()) @db.DateTime(0)
-  deleted_at            DateTime? @db.DateTime(0)
-  deleted_by            Int?
-  is_required_cpf       Boolean?  @default(false)
-  updated_at            DateTime  @default(now()) @db.DateTime(0)
-  affiliate_id          Int?
-  payment_days          Int       @default(0)
-  auto_increment        Int?
+  id                               Int       @id @default(autoincrement())
+  unidade_id                       Int
+  affiliate_id                     Int?
+  razao_social                     String    @db.VarChar(40)
+  nome_fantasia                    String    @db.VarChar(40)
+  cnpj                             String    @db.VarChar(20)
+  inativo                          Boolean   @default(false)
+  ans                              String?   @db.VarChar(6)
+  dias_retorno                     Int?
+  img                              String?   @db.Text
+  codigo_credenciamento            String?   @db.VarChar(45)
+  particular                       Int       @default(0)
+  reembolso                        Boolean   @default(false)
+  convenio_id_old                  Int?
+  id_externo                       Int?
+  matricula                        Int?
+  exigir_matricula                 Boolean?  @default(false)
+  guia_principal                   Int?
+  exigir_guia                      Boolean?  @default(false)
+  guia_operadora                   Int?
+  codigo_operadora                 String?   @db.VarChar(50)
+  omit_production_doctor           Boolean   @default(false)
+  omit_code                        Boolean   @default(false)
+  omit_code_operator               Boolean   @default(false)
+  omit_requesting_physician        Boolean   @default(false)
+  omit_type_consultation           Boolean   @default(false)
+  combine_products                 Boolean   @default(true)
+  payment_days                     Int       @default(0)
+  is_required_cpf                  Boolean?  @default(false)
+  auto_increment                   Int?
+  created_at                       DateTime  @default(now()) @db.DateTime(0)
+  updated_at                       DateTime  @default(now()) @db.DateTime(0)
+  deleted_at                       DateTime? @db.DateTime(0)
+  deleted_by                       Int?
+  is_required_requesting_physician Boolean   @default(false)
+
+  // pacientes    pacientes[]
+  // affiliate  affiliates? @relation(fields: [affiliate_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  orcamento_produto orcamento_produto[]
 }
 
 model credenciamentos {
@@ -438,20 +453,20 @@ model dominio_produto {
 }
 
 model especialidades {
-  id                   Int         @id @default(autoincrement())
+  id                   Int       @id @default(autoincrement())
   unidade_id           Int
-  nome                 String      @db.VarChar(40)
-  inativo              Int         @default(0)
-  tiss                 String?     @db.VarChar(20)
+  nome                 String    @db.VarChar(40)
+  inativo              Int       @default(0)
+  tiss                 String?   @db.VarChar(20)
   especialidade_id_old Int?
-  created_at           DateTime    @default(now()) @db.DateTime(0)
-  deleted_at           DateTime?   @db.DateTime(0)
+  created_at           DateTime  @default(now()) @db.DateTime(0)
+  updated_at           DateTime  @default(now()) @db.DateTime(0)
+  deleted_at           DateTime? @db.DateTime(0)
   deleted_by           Int?
-  updated_at           DateTime    @default(now()) @db.DateTime(0)
-  agendas              agendas[]
-  user_admin           user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 
-  @@index([deleted_by], map: "especialidades_deleted_by_fkey")
+  // clinic     unidades    @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  agendas    agendas[]
 }
 
 model especialidades_medicos {
@@ -485,7 +500,7 @@ model estoque {
   valor         Int?              @db.MediumInt
   quantidade    Int               @db.MediumInt
   saldo         Int               @db.MediumInt
-  movimento     estoque_movimento @default(dbgenerated("(SAIDA)"))
+  movimento     estoque_movimento @default(SAIDA)
   created_at    DateTime?         @default(now()) @db.DateTime(0)
   updated_at    DateTime?         @db.DateTime(0)
   produtos      produtos          @relation(fields: [produto_id], references: [id], onUpdate: Restrict, map: "estoque_produto_id")
@@ -500,6 +515,7 @@ model estoque_pedidos {
   status     estoque_pedido_status
   produtos   String                @db.Text
   created_at DateTime?             @default(now()) @db.DateTime(0)
+  // unidade    unidades              @relation(fields: [unidade_id], references: [id])
 }
 
 model formas_pagamentos {
@@ -511,11 +527,13 @@ model formas_pagamentos {
   taxa              Float?                           @db.Float
   dias_para_credito Int?                             @default(0)
   inativo           Int                              @default(0)
-  tipo_operacao     formas_pagamentos_tipo_operacao? @default(dbgenerated("(AVISTA)"))
+  tipo_operacao     formas_pagamentos_tipo_operacao? @default(AVISTA)
+  finset_bank_id    Int?
+  finset_id         Int?
   created_at        DateTime?                        @default(now()) @db.DateTime(0)
   updated_at        DateTime?                        @db.DateTime(0)
-  finset_id         Int?
   unidades          unidades?                        @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "forma_pagamento_unidade")
+  invoice_payment   invoice_payment[]
 
   @@index([unidade_id], map: "unidade_id")
 }
@@ -540,6 +558,10 @@ model formulario_preenchido {
   @@index([unidade_id], map: "formulario_preenchido_unidade")
 }
 
+enum ReactiveForm {
+  REQUEST_EXAM
+}
+
 model formulario_preenchido_old {
   id                           Int       @id @default(autoincrement())
   unidade_id                   Int?
@@ -560,15 +582,17 @@ model formulario_preenchido_old {
 }
 
 model formularios {
-  id                Int     @id @default(autoincrement())
+  id                Int           @id @default(autoincrement())
   unidade_id        Int?
-  nome              String? @db.VarChar(45)
-  json              String? @db.Text
-  nome_impressao    String? @db.VarChar(150)
-  inativo           Int?    @default(0)
-  categoria         String  @default(dbgenerated("(DIVERSOS)")) @db.VarChar(50)
-  manter_preenchido String? @db.Text
+  nome              String?       @db.VarChar(45)
+  json              String?       @db.Text
+  nome_impressao    String?       @db.VarChar(150)
+  inativo           Int?          @default(0)
+  categoria         String        @default("DIVERSOS") @db.VarChar(50)
+  manter_preenchido String?       @db.Text
   formulario_id_old Int?
+  reactive_id       ReactiveForm?
+  private_form      Boolean       @default(false)
 
   @@index([unidade_id], map: "formularios_unidade")
 }
@@ -577,7 +601,7 @@ model fornecedores {
   id                 Int       @id @default(autoincrement())
   unidade_id         Int
   name               String    @db.VarChar(255)
-  cnpj               String    @db.VarChar(14)
+  cnpj               String?   @db.VarChar(14)
   address            String?   @db.Text
   district           String?   @db.VarChar(255)
   city               String?   @db.VarChar(255)
@@ -588,6 +612,7 @@ model fornecedores {
   contact_name       String?   @db.VarChar(255)
   delivery_days      Int       @db.UnsignedSmallInt
   payment_conditions String?   @db.VarChar(255)
+  annotation         String?   @db.Text
   created_at         DateTime? @default(now()) @db.DateTime(0)
   updated_at         DateTime? @db.DateTime(0)
   unidades           unidades  @relation(fields: [unidade_id], references: [id], onUpdate: Restrict, map: "fornecedore_unidade")
@@ -664,7 +689,7 @@ model integracoes {
   tabela         String    @db.VarChar(20)
   chave_primaria Int
   data           DateTime? @db.Timestamp(0)
-  integrado      String?   @default(dbgenerated("(N)")) @db.VarChar(1)
+  integrado      String?   @default("N") @db.VarChar(1)
 }
 
 model intervalos {
@@ -693,12 +718,12 @@ model logerroteleconsulta {
 
 model lote {
   id          Int       @id @default(autoincrement())
+  lot         Int?
+  protocol    String?   @db.VarChar(45)
   unidade_id  Int?
   data        DateTime? @db.DateTime(0)
   status      String?   @db.VarChar(45)
   convenio_id Int?
-  lot         Int?
-  protocol    String?   @db.VarChar(45)
 
   @@index([convenio_id], map: "lote_convenio_idx")
   @@index([unidade_id], map: "lote_unidade")
@@ -731,145 +756,136 @@ model medicamentos {
 }
 
 model medicos {
-  id                      Int                      @id @default(autoincrement())
+  id                      Int                   @id @default(autoincrement())
   unidade_id              Int
-  nome                    String                   @db.VarChar(80)
-  cpf                     String?                  @db.VarChar(20)
-  crm                     String?                  @db.VarChar(15)
-  id_corporativo          String?                  @db.VarChar(20)
-  email                   String?                  @db.VarChar(80)
-  telefone                String?                  @db.VarChar(45)
-  imposto_nf              Float?                   @default(0) @db.Float
-  json_segunda            String?                  @db.Text
-  json_terca              String?                  @db.Text
-  json_quarta             String?                  @db.Text
-  json_quinta             String?                  @db.Text
-  json_sexta              String?                  @db.Text
-  json_sabado             String?                  @db.Text
-  json_domingo            String?                  @db.Text
-  conselho                String?                  @db.VarChar(12)
-  uf_conselho             String?                  @db.VarChar(2)
-  inativo                 Boolean                  @default(false)
-  data_inicio_agenda      DateTime?                @db.Date
-  data_fim_agenda         DateTime?                @db.Date
-  foto                    String?                  @db.LongText
+  nome                    String                @db.VarChar(80)
+  cpf                     String?               @db.VarChar(20)
+  crm                     String?               @db.VarChar(15)
+  id_corporativo          String?               @db.VarChar(20)
+  email                   String?               @db.VarChar(80)
+  telefone                String?               @db.VarChar(45)
+  imposto_nf              Float?                @default(0) @db.Float
+  json_segunda            String?               @db.Text
+  json_terca              String?               @db.Text
+  json_quarta             String?               @db.Text
+  json_quinta             String?               @db.Text
+  json_sexta              String?               @db.Text
+  json_sabado             String?               @db.Text
+  json_domingo            String?               @db.Text
+  conselho                String?               @db.VarChar(12)
+  uf_conselho             String?               @db.VarChar(2)
+  inativo                 Boolean               @default(false)
+  is_requesting_physician Boolean?              @default(false)
+  data_inicio_agenda      DateTime?             @db.Date
+  data_fim_agenda         DateTime?             @db.Date
+  foto                    String?               @db.LongText
   atendimento             Int?
-  logo                    String?                  @db.LongText
-  usu_id                  Int?                     @unique
-  whatsapp                Int                      @default(0)
-  whatsapp_endereco       Boolean?                 @default(true)
-  whatsapp_parabens       Int                      @default(0)
-  porcentagem             Decimal                  @default(0.00) @db.Decimal(5, 2)
-  porcentagem_con         Decimal                  @default(0.00) @db.Decimal(5, 2)
-  porcentagem_exa         Decimal                  @default(0.00) @db.Decimal(5, 2)
-  porcentagem_lab         Decimal                  @default(0.00) @db.Decimal(5, 2)
-  mensagem_parabens       String?                  @db.VarChar(255)
+  logo                    String?               @db.LongText
+  usu_id                  Int?                  @unique
+  whatsapp                Int                   @default(0)
+  whatsapp_endereco       Boolean?              @default(true)
+  whatsapp_parabens       Int                   @default(0)
+  whatsapp_con            whatsapp_confirmation @default(NONE)
+  whatsapp_exa            whatsapp_confirmation @default(NONE)
+  permissions             String?               @db.VarChar(255)
+  porcentagem             Decimal               @default(0.00) @db.Decimal(5, 2)
+  porcentagem_con         Decimal               @default(0.00) @db.Decimal(5, 2)
+  porcentagem_exa         Decimal               @default(0.00) @db.Decimal(5, 2)
+  porcentagem_lab         Decimal               @default(0.00) @db.Decimal(5, 2)
+  mensagem_parabens       String?               @db.VarChar(255)
   id_externo              Int?
-  features                String?                  @db.LongText
-  numero_rqe              String?                  @db.VarChar(20)
-  created_at              DateTime                 @default(now()) @db.DateTime(0)
-  deleted_at              DateTime?                @db.DateTime(0)
-  deleted_by              Int?
-  is_requesting_physician Boolean?                 @default(false)
-  updated_at              DateTime                 @default(now()) @db.DateTime(0)
-  permissions             String?                  @db.VarChar(255)
-  whatsapp_con            medicos_whatsapp_con     @default(dbgenerated("(NONE)"))
-  whatsapp_exa            medicos_whatsapp_exa     @default(dbgenerated("(NONE)"))
+  features                String?               @db.LongText
+  numero_rqe              String?               @db.VarChar(200)
   agendas                 agendas[]
-  atendimento_produto     atendimento_produto[]
-  doctor_message_shipped  doctor_message_shipped[]
-  doctor_payment          doctor_payment[]
-  userDeletedBy           user_admin?              @relation("UserDeletedBy", fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  created_at              DateTime              @default(now()) @db.DateTime(0)
+  updated_at              DateTime              @default(now()) @db.DateTime(0)
+  deleted_at              DateTime?             @db.DateTime(0)
+  deleted_by              Int?
+
+  // clinic                 unidades                 @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  userDeletedBy          user_admin?              @relation("UserDeletedBy", fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  // userDoctor             user_admin?              @relation("UserDoctor", fields: [usu_id], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  doctor_payment         doctor_payment[]
+  doctor_message_shipped doctor_message_shipped[]
+  atendimento_produto    atendimento_produto[]
+  doctorProduction       atendimento_produto[]    @relation("doctorProduction")
 
   @@index([cpf], map: "cpf")
-  @@index([deleted_by], map: "medicos_deleted_by_fkey")
 }
 
 model doctor_message_shipped {
-  id                  Int               @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   clinic_id           Int
   doctor_id           Int
   schedule_patient_id Int
   from                String
   to                  String
-  message             String            @db.Text
-  created_at          DateTime          @default(now()) @db.DateTime(0)
-  clinic              unidades          @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  doctor              medicos           @relation(fields: [doctor_id], references: [id], onUpdate: NoAction)
-  schedule_patient    agendas_pacientes @relation(fields: [schedule_patient_id], references: [id], onUpdate: NoAction)
+  message             String   @db.Text
+  created_at          DateTime @default(now()) @db.DateTime(0)
 
-  @@index([clinic_id], map: "doctor_message_shipped_clinic_id_fkey")
-  @@index([doctor_id], map: "doctor_message_shipped_doctor_id_fkey")
-  @@index([schedule_patient_id], map: "doctor_message_shipped_schedule_patient_id_fkey")
+  clinic           unidades          @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  doctor           medicos           @relation(fields: [doctor_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  schedule_patient agendas_pacientes @relation(fields: [schedule_patient_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model doctor_payment {
-  id                      Int                       @id @default(autoincrement())
-  clinic_id               Int
-  doctor_id               Int
-  value                   Float
-  protocol                String
-  status                  doctor_payment_status
-  file_id                 Int
-  observation             String?
-  created_at              DateTime                  @default(now()) @db.DateTime(0)
-  updated_at              DateTime                  @default(now()) @db.DateTime(0)
-  deleted_at              DateTime?                 @db.DateTime(0)
-  deleted_by              Int?
-  clinic                  unidades                  @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  userDeletedBy           user_admin?               @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  doctorPayed             medicos                   @relation(fields: [doctor_id], references: [id], onUpdate: NoAction)
-  file                    files                     @relation(fields: [file_id], references: [id], onUpdate: NoAction)
-  doctor_payment_products doctor_payment_products[]
+  id          Int                   @id @default(autoincrement())
+  clinic_id   Int
+  doctor_id   Int
+  value       Float
+  protocol    Int
+  status      doctor_payment_status
+  file_id     Int
+  observation String?
+  created_at  DateTime              @default(now()) @db.DateTime(0)
+  updated_at  DateTime              @default(now()) @db.DateTime(0)
+  deleted_at  DateTime?             @db.DateTime(0)
+  deleted_by  Int?
 
-  @@index([clinic_id], map: "doctor_payment_clinic_id_fkey")
-  @@index([deleted_by], map: "doctor_payment_deleted_by_fkey")
-  @@index([doctor_id], map: "doctor_payment_doctor_id_fkey")
-  @@index([file_id], map: "doctor_payment_file_id_fkey")
+  clinic                  unidades                  @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  userDeletedBy           user_admin?               @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  doctorPayed             medicos?                  @relation(fields: [doctor_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  file                    files                     @relation(fields: [file_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  doctor_payment_products doctor_payment_products[]
 }
 
 model doctor_payment_products {
-  id                    Int                 @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   clinic_id             Int
   doctor_payment_id     Int
   assignment_product_id Int
   rule_id               Int?
   tax                   Float
   payment_value         Float
-  created_at            DateTime            @default(now())
-  updated_at            DateTime            @default(now())
-  deleted_at            DateTime?           @db.DateTime(0)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now())
+  deleted_at            DateTime? @db.DateTime(0)
   deleted_by            Int?
-  assignment_products   atendimento_produto @relation(fields: [assignment_product_id], references: [id], onUpdate: NoAction)
-  clinic                unidades            @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  userDeletedBy         user_admin?         @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  doctor_payment        doctor_payment      @relation(fields: [doctor_payment_id], references: [id], onUpdate: NoAction)
 
-  @@index([assignment_product_id], map: "doctor_payment_products_assignment_product_id_fkey")
-  @@index([clinic_id], map: "doctor_payment_products_clinic_id_fkey")
-  @@index([deleted_by], map: "doctor_payment_products_deleted_by_fkey")
-  @@index([doctor_payment_id], map: "doctor_payment_products_doctor_payment_id_fkey")
+  // rule                regras?             @relation(fields: [rule_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  doctor_payment      doctor_payment      @relation(fields: [doctor_payment_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  assignment_products atendimento_produto @relation(fields: [assignment_product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  clinic              unidades            @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  userDeletedBy       user_admin?         @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model files {
-  id             Int              @id @default(autoincrement())
-  clinic_id      Int
-  file_name      String
-  file_size      Int
-  mimetype       String
-  file_url       String
-  description    String?
-  is_public      Boolean          @default(true)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @default(now())
-  deleted_at     DateTime?        @db.DateTime(0)
-  deleted_by     Int?
-  doctor_payment doctor_payment[]
-  clinic         unidades         @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  userDeletedBy  user_admin?      @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  id          Int       @id @default(autoincrement())
+  clinic_id   Int
+  file_name   String
+  file_size   Int
+  mimetype    String
+  file_url    String
+  description String?
+  is_public   Boolean   @default(true)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now())
+  deleted_at  DateTime? @db.DateTime(0)
+  deleted_by  Int?
 
-  @@index([clinic_id], map: "files_clinic_id_fkey")
-  @@index([deleted_by], map: "files_deleted_by_fkey")
+  clinic         unidades         @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  doctor_payment doctor_payment[]
+  userDeletedBy  user_admin?      @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model medicos_formularios {
@@ -896,6 +912,7 @@ model mensagens {
   telefone           String  @db.VarChar(15)
   agenda_paciente_id Int
   resposta           String? @db.VarChar(100)
+  ack                Int     @default(0)
 }
 
 model ocorrencia_atendimento_produto {
@@ -905,45 +922,60 @@ model ocorrencia_atendimento_produto {
   status         String                  @db.VarChar(50)
   data_hora      DateTime                @db.DateTime(0)
   produto_id     Int
-  tipo           tipo_ocorrencia_produto @default(dbgenerated("(MEDICINA)"))
+  tipo           tipo_ocorrencia_produto @default(MEDICINA)
 
   @@index([unidade_id], map: "ocorrencia_atendimento_produto_unidade")
+  @@index([atendimento_id, produto_id])
 }
 
 model ocorrencias {
-  id          Int       @id @default(autoincrement())
-  unidade_id  Int?
-  data_hora   DateTime? @db.DateTime(0)
-  status      String?   @db.VarChar(40)
-  motivo      String?   @db.Char(255)
-  agenda_id   Int?
-  paciente_id Int?
+  id                  Int       @id @default(autoincrement())
+  unidade_id          Int?
+  data_hora           DateTime? @db.DateTime(0)
+  status              String?   @db.VarChar(40)
+  motivo              String?   @db.Char(255)
+  agenda_id           Int?
+  paciente_id         Int?
+  schedule_patient_id Int?
 
   @@index([agenda_id], map: "agenda_idx")
   @@index([status], map: "index3")
   @@index([unidade_id], map: "ocorrencias_unidade")
   @@index([paciente_id], map: "paciente_idx")
+  @@index([schedule_patient_id], map: "schedule_patient_idx")
 }
 
 model orcamento {
-  id          Int      @id @default(autoincrement())
-  unidade_id  Int?
-  paciente_id Int
-  data_hora   DateTime @db.DateTime(0)
+  id                Int                 @id @default(autoincrement())
+  unidade_id        Int?
+  paciente_id       Int
+  data_hora         DateTime            @db.DateTime(0)
+  orcamento_produto orcamento_produto[]
+  inativo           Int                 @default(0)
 
   @@index([unidade_id], map: "orcamento_unidade")
 }
 
 model orcamento_produto {
-  id           Int    @id @default(autoincrement())
-  unidade_id   Int?
+  id           Int                    @id @default(autoincrement())
+  unidade_id   Int
   produto_id   Int
   orcamento_id Int
-  desconto     Float? @db.Float
-  quantidade   Int
-  preco        Float  @db.Float
+  desconto     Decimal                @default(0.00)
+  quantidade   Int                    @default(1)
+  preco        Decimal                @default(0.00)
+  convenio_id  Int?
+  status       OrcamentoProdutoStatus @default(PENDING)
 
-  @@index([unidade_id], map: "orcamento_produto_unidade")
+  clinic    unidades   @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  convenio  convenios? @relation(fields: [convenio_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  orcamento orcamento  @relation(fields: [orcamento_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  product   produtos   @relation(fields: [produto_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+}
+
+enum OrcamentoProdutoStatus {
+  PENDING
+  REALIZED
 }
 
 model paciente_anexo {
@@ -968,62 +1000,64 @@ model paciente_unidade {
 }
 
 model pacientes {
-  id                      Int                       @id @default(autoincrement())
-  unidade_id              Int
-  nome                    String                    @db.VarChar(200)
-  nascimento              DateTime?                 @db.Date
-  genero                  String?                   @db.VarChar(15)
-  user_id                 Int?
-  email                   String?                   @db.VarChar(60)
-  telefone                String?                   @db.VarChar(16)
-  telefone2               String?                   @db.VarChar(16)
-  cpf                     String?                   @db.VarChar(15)
-  numero                  String?                   @db.VarChar(10)
-  logradouro              String?                   @db.VarChar(100)
-  bairro                  String?                   @db.VarChar(30)
-  cidade                  String?                   @db.VarChar(30)
-  estado                  String?                   @db.VarChar(2)
-  cep                     String?                   @db.VarChar(12)
-  complemento             String?                   @db.VarChar(150)
-  numero_carteira         String?                   @db.VarChar(20)
-  validade_carteira       DateTime?                 @db.Date
-  nome_mae                String?                   @db.VarChar(150)
-  rg                      String?                   @db.VarChar(45)
-  orgao_emissor           String?                   @db.VarChar(45)
-  estado_civil            String?                   @db.VarChar(45)
-  foto                    String?                   @db.LongText
-  convenio_id             Int?
-  plano_id                Int?
-  inativo                 Int                       @default(0)
-  alergia                 String?                   @db.VarChar(600)
-  cartao_nacional_saude   String?                   @db.VarChar(45)
-  codigo_externo          String?                   @db.VarChar(45)
-  paciente_id_old         Int?
-  id_externo              Int?
-  tipo_usuario            pacientes_tipo_usuario?   @default(dbgenerated("(NONE)"))
-  obs_tipo                String?                   @db.VarChar(200)
-  profissao               String?                   @db.VarChar(50)
-  created_at              DateTime                  @default(now()) @db.DateTime(0)
-  deleted_at              DateTime?                 @db.DateTime(0)
-  deleted_by              Int?
-  updated_at              DateTime                  @default(now()) @db.DateTime(0)
-  height                  Int?
-  update_hash_code        String?
-  weight                  Float?
-  assignment_code_unified assignment_code_unified[]
-  user_admin              user_admin?               @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  id                    Int                     @id @default(autoincrement())
+  update_hash_code      String?
+  unidade_id            Int
+  nome                  String                  @db.VarChar(200)
+  nascimento            DateTime?               @db.Date
+  genero                String?                 @db.VarChar(15)
+  user_id               Int?
+  email                 String?                 @db.VarChar(60)
+  telefone              String?                 @db.VarChar(16)
+  telefone2             String?                 @db.VarChar(16)
+  cpf                   String?                 @db.VarChar(15)
+  numero                String?                 @db.VarChar(10)
+  logradouro            String?                 @db.VarChar(100)
+  bairro                String?                 @db.VarChar(100)
+  cidade                String?                 @db.VarChar(30)
+  estado                String?                 @db.VarChar(2)
+  cep                   String?                 @db.VarChar(12)
+  complemento           String?                 @db.VarChar(150)
+  numero_carteira       String?                 @db.VarChar(20)
+  validade_carteira     DateTime?               @db.Date
+  nome_mae              String?                 @db.VarChar(150)
+  rg                    String?                 @db.VarChar(45)
+  orgao_emissor         String?                 @db.VarChar(45)
+  estado_civil          String?                 @db.VarChar(45)
+  foto                  String?                 @db.LongText
+  convenio_id           Int?
+  plano_id              Int?
+  inativo               Int                     @default(0)
+  alergia               String?                 @db.VarChar(600)
+  cartao_nacional_saude String?                 @db.VarChar(45)
+  codigo_externo        String?                 @db.VarChar(45)
+  paciente_id_old       Int?
+  id_externo            Int?
+  tipo_usuario          pacientes_tipo_usuario? @default(NONE)
+  obs_tipo              String?                 @db.VarChar(200)
+  profissao             String?                 @db.VarChar(50)
+  weight                Float?
+  height                Float?
+  created_at            DateTime                @default(now()) @db.DateTime(0)
+  updated_at            DateTime                @default(now()) @db.DateTime(0)
+  deleted_at            DateTime?               @db.DateTime(0)
+  deleted_by            Int?
 
-  @@index([deleted_by], map: "pacientes_deleted_by_fkey")
+  // clinic     unidades    @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  user_admin              user_admin?               @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  // healthcare convenios?  @relation(fields: [convenio_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // plan       planos?     @relation(fields: [plano_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assignment_code_unified assignment_code_unified[]
 }
 
 model painel {
-  id         String   @id @db.VarChar(36)
+  id         Int      @id @default(autoincrement())
   unidade_id Int
   nome       String   @db.VarChar(100)
   token      String?  @db.VarChar(200)
+  video_url  String?
   created_at DateTime @default(now()) @db.DateTime(0)
   updated_at DateTime @default(now()) @db.DateTime(0)
-  video_url  String?
 
   @@index([unidade_id], map: "painel_unidade")
 }
@@ -1054,75 +1088,86 @@ model pesquisas {
 }
 
 model planos {
-  id           Int         @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   unidade_id   Int
-  nome         String      @db.VarChar(40)
+  nome         String    @db.VarChar(40)
   convenio_id  Int
   plano_id_old Int?
-  created_at   DateTime    @default(now()) @db.DateTime(0)
-  deleted_at   DateTime?   @db.DateTime(0)
+  created_at   DateTime  @default(now()) @db.DateTime(0)
+  updated_at   DateTime  @default(now()) @db.DateTime(0)
+  deleted_at   DateTime? @db.DateTime(0)
   deleted_by   Int?
-  updated_at   DateTime    @default(now()) @db.DateTime(0)
-  user_admin   user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 
-  @@index([deleted_by], map: "planos_deleted_by_fkey")
+  user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  // clinic     unidades    @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // pacientes  pacientes[]
 }
 
 model produtos {
-  id                         Int                          @id @default(autoincrement())
-  unidade_id                 Int?
-  nome                       String                       @db.VarChar(70)
-  descricao                  String                       @db.VarChar(400)
-  inativo                    Int?                         @default(0)
-  cbhpm                      String?                      @db.VarChar(8)
-  tuss                       String?                      @db.VarChar(10)
-  tipo                       tipo_produtos
-  amb                        String?                      @db.VarChar(10)
-  produto_id_old             Int?
-  ncm                        String?
-  fornecedor_id              Int?                         @db.UnsignedInt
-  apresentacao               String?                      @db.VarChar(255)
-  unidades_compra            Int?                         @db.UnsignedMediumInt
-  unidades_aplicacao         Int?                         @db.UnsignedMediumInt
-  estoque_min                Int?                         @db.UnsignedMediumInt
-  reposicao_dias             Int?                         @db.UnsignedSmallInt
-  estoque_reposicao          Int?                         @db.UnsignedMediumInt
-  medida_id                  Int?
-  via_id                     Int?
-  intervalo_id               Int?
-  created_at                 DateTime                     @default(now()) @db.DateTime(0)
-  deleted_at                 DateTime?                    @db.DateTime(0)
-  deleted_by                 Int?
-  updated_at                 DateTime                     @default(now()) @db.DateTime(0)
-  product_class_id           Int?
-  agendas                    agendas[]
-  assignment_product_history assignment_product_history[]
-  estoque                    estoque[]
-  productKitMain             product_kit[]                @relation("MainProductId")
-  productKit                 product_kit[]                @relation("ProductId")
-  user_admin                 user_admin?                  @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  id                 Int           @id @default(autoincrement())
+  unidade_id         Int?
+  nome               String        @db.VarChar(70)
+  descricao          String        @db.VarChar(400)
+  inativo            Int?          @default(0)
+  cbhpm              String?       @db.VarChar(8)
+  tuss               String?       @db.VarChar(10)
+  tipo               tipo_produtos
+  amb                String?       @db.VarChar(10)
+  produto_id_old     Int?
+  ncm                String?
+  fornecedor_id      Int?          @db.UnsignedInt
+  apresentacao       String?       @db.VarChar(255)
+  unidades_compra    Int?          @db.UnsignedMediumInt
+  unidades_aplicacao Int?          @db.UnsignedMediumInt
+  estoque_min        Int?          @db.UnsignedMediumInt
+  reposicao_dias     Int?          @db.UnsignedSmallInt
+  estoque_reposicao  Int?          @db.UnsignedMediumInt
+  medida_id          Int?
+  via_id             Int?
+  intervalo_id       Int?
+  product_class_id   Int?
+  created_at         DateTime      @default(now()) @db.DateTime(0)
+  updated_at         DateTime      @default(now()) @db.DateTime(0)
+  deleted_at         DateTime?     @db.DateTime(0)
+  deleted_by         Int?
+
+  agendas        agendas[]
+  estoque        estoque[]
+  productKitMain product_kit[] @relation("MainProductId")
+  productKit     product_kit[] @relation("ProductId")
+
   product_class              product_class?               @relation(fields: [product_class_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  user_admin                 user_admin?                  @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  assignment_product_history assignment_product_history[]
+  orcamento_produto          orcamento_produto[]
 
   @@index([fornecedor_id], map: "fornecedor_id")
   @@index([unidade_id], map: "produtos_unidade")
-  @@index([deleted_by], map: "produtos_deleted_by_fkey")
-  @@index([product_class_id], map: "produtos_product_class_id_fkey")
 }
 
 model product_class {
-  id         Int         @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   clinic_id  Int
-  name       String      @db.VarChar(70)
-  created_at DateTime    @default(now()) @db.DateTime(0)
-  updated_at DateTime    @default(now()) @db.DateTime(0)
-  deleted_at DateTime?   @db.DateTime(0)
+  name       String    @db.VarChar(70)
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  updated_at DateTime  @default(now()) @db.DateTime(0)
+  deleted_at DateTime? @db.DateTime(0)
   deleted_by Int?
-  clinic     unidades    @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
+
+  clinic     unidades    @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
   produtos   produtos[]
+}
 
-  @@index([clinic_id], map: "product_class_clinic_id_fkey")
-  @@index([deleted_by], map: "product_class_deleted_by_fkey")
+enum tipo_produtos {
+  CON
+  DIA
+  EXA
+  HON
+  LAB
+  MAT
+  MED
+  TAX
 }
 
 model produtos_produtosgrupo {
@@ -1154,7 +1199,7 @@ model salas {
 
 model tabela_dominio {
   id     Int     @id @default(autoincrement())
-  codigo Int?
+  codigo String?
   nome   String? @db.VarChar(100)
 }
 
@@ -1168,7 +1213,7 @@ model unidades {
   endereco                      String?                      @db.VarChar(100)
   fone                          String?                      @db.VarChar(16)
   email                         String?                      @db.VarChar(60)
-  clinica_individual            String?                      @default(dbgenerated("(N)")) @db.VarChar(1)
+  clinica_individual            String?                      @default("N") @db.VarChar(1)
   profissional_resp_nome        String?                      @db.VarChar(30)
   profissional_resp_cpf         String?                      @db.VarChar(20)
   profissional_resp_fone        String?                      @db.VarChar(20)
@@ -1177,8 +1222,8 @@ model unidades {
   profissional_resp_conselho    String?                      @db.VarChar(12)
   profissional_resp_uf_conselho String?                      @db.VarChar(2)
   logo                          String?                      @db.Text
-  estado                        String?                      @default(dbgenerated("(PE)")) @db.VarChar(45)
-  cidade                        String?                      @default(dbgenerated("(Recife)")) @db.VarChar(150)
+  estado                        String?                      @default("PE") @db.VarChar(45)
+  cidade                        String?                      @default("Recife") @db.VarChar(150)
   relatorio                     Int?
   bairro                        String?                      @db.VarChar(200)
   numero                        Int?
@@ -1189,22 +1234,34 @@ model unidades {
   financeiro                    Int?
   id_externo                    Int?
   datafin_password              String?                      @db.VarChar(255)
-  assumir_taxa_cartao           unidades_assumir_taxa_cartao @default(dbgenerated("(N)"))
   permissions                   String?                      @db.VarChar(255)
+  assumir_taxa_cartao           unidades_assumir_taxa_cartao @default(N)
   agendas                       agendas[]
   agendas_pacientes             agendas_pacientes[]
-  anexo_formulario              anexo_formulario[]
-  assignment_code_unified       assignment_code_unified[]
-  assignment_product_history    assignment_product_history[]
-  doctor_message_shipped        doctor_message_shipped[]
-  doctor_payment                doctor_payment[]
-  doctor_payment_products       doctor_payment_products[]
-  files                         files[]
   formas_pagamentos             formas_pagamentos[]
   fornecedores                  fornecedores[]
-  invoice_assignment_products   invoice_assignment_product[]
-  product_class                 product_class[]
+  // estoque_pedidos               estoque_pedidos[]
+  // user_admin                    user_admin[]
+  // invoice                       invoice[]
+  // invoice_payment               invoice_payment[]
+  // pacientes                     pacientes[]
+  // especialidades                especialidades[]
+  // Affiliates                    affiliates[]
+  // planos                        planos[]
+  // medicos                       medicos[]
+  anexo_formulario              anexo_formulario[]
+  doctor_payment                doctor_payment[]
+  files                         files[]
+  doctor_payment_products       doctor_payment_products[]
+  // regras                        regras[]
+  doctor_message_shipped        doctor_message_shipped[]
   product_kits                  product_kit[]
+  assignment_product_history    assignment_product_history[]
+  invoice_assignment_products   invoice_assignment_product[]
+  assignment_code_unified       assignment_code_unified[]
+  product_class                 product_class[]
+  orcamento_produto             orcamento_produto[]
+  integration                   integration[]
 }
 
 model affiliates {
@@ -1212,13 +1269,19 @@ model affiliates {
   clinic_id      Int
   fantasy_name   String
   corporate_name String
+  type_document  type_document_affiliates @default(CNPJ)
   cpf_cnpj       String
+  cnes           String?
   created_at     DateTime                 @default(now()) @db.DateTime(0)
   updated_at     DateTime                 @default(now()) @db.DateTime(0)
   deleted_at     DateTime?                @db.DateTime(0)
   deleted_by     Int?
-  type_document  type_document_affiliates @default(dbgenerated("(CNPJ)"))
-  cnes           String?
+
+  // user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  // clinic     unidades    @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // convenios  convenios[]
+  // unidades         unidades?   @relation(fields: [unidadesId], references: [id])
+  // user_admin       user_admin? @relation(fields: [user_adminUsu_id], references: [usu_id])
 }
 
 model cid {
@@ -1229,46 +1292,58 @@ model cid {
   updated_at DateTime  @default(now()) @db.DateTime(0)
   deleted_at DateTime? @db.DateTime(0)
   deleted_by Int?
+
+  // user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
+  // user_admin       user_admin? @relation(fields: [user_adminUsu_id], references: [usu_id])
 }
 
 model user_admin {
-  usu_id                            Int                          @id @default(autoincrement())
-  unidade_id                        Int
-  usu_nome                          String?                      @db.VarChar(120)
-  usu_email                         String?                      @db.VarChar(100)
-  usu_senha                         String?                      @db.VarChar(100)
-  usu_cpf                           String?                      @db.VarChar(45)
-  usu_profissao                     String?                      @db.VarChar(50)
-  usu_acesso                        String?                      @db.Text
-  usu_app                           Boolean                      @default(false)
-  inativo                           Boolean                      @default(false)
-  privacy_policy_accepted_at        DateTime?                    @db.DateTime(0)
-  created_at                        DateTime                     @default(now()) @db.DateTime(0)
-  deleted_at                        DateTime?                    @db.DateTime(0)
-  deleted_by                        Int?
-  updated_at                        DateTime                     @default(now()) @db.DateTime(0)
-  agendas                           agendas[]
-  agendas_pacientes                 agendas_pacientes[]
-  anexo_formulario                  anexo_formulario[]
-  assignment_code_unified           assignment_code_unified[]
-  assignmentProductHistoryDeletedBy assignment_product_history[] @relation("UserDeleted")
+  usu_id                     Int       @id @default(autoincrement())
+  unidade_id                 Int
+  usu_nome                   String?   @db.VarChar(120)
+  usu_email                  String?   @db.VarChar(100)
+  usu_senha                  String?   @db.VarChar(100)
+  usu_cpf                    String?   @db.VarChar(45)
+  usu_profissao              String?   @db.VarChar(50)
+  usu_acesso                 String?   @db.Text
+  usu_app                    Boolean   @default(false)
+  inativo                    Boolean   @default(false)
+  privacy_policy_accepted_at DateTime? @db.DateTime(0)
+
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  updated_at DateTime  @default(now()) @db.DateTime(0)
+  deleted_at DateTime? @db.DateTime(0)
+  deleted_by Int?
+
+  // clinic                            unidades                     @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  user_admin              user_admin?               @relation("DeletedBy", fields: [deleted_by], references: [usu_id])
+  user                    user_admin[]              @relation("DeletedBy")
+  // invoice                           invoice[]
+  // invoice_payment                   invoice_payment[]
+  pacientes               pacientes[]
+  // cid                               cid[]
+  especialidades          especialidades[]
+  // Affiliates                        affiliates[]
+  planos                  planos[]
+  // convenios                         convenios[]
+  agendas_pacientes       agendas_pacientes[]
+  doctorDeletedBy         medicos[]                 @relation("UserDeletedBy")
+  // doctorUserId                      medicos?                     @relation("UserDoctor")
+  agendas                 agendas[]
+  anexo_formulario        anexo_formulario[]
+  doctor_payment          doctor_payment[]
+  files                   files[]
+  doctor_payment_products doctor_payment_products[]
+  product_kits            product_kit[]
+  produtos                produtos[]
+
   assignmentProductHistoryUserId    assignment_product_history[] @relation("UserCreated")
-  doctor_payment                    doctor_payment[]
-  doctor_payment_products           doctor_payment_products[]
-  especialidades                    especialidades[]
-  files                             files[]
+  assignmentProductHistoryDeletedBy assignment_product_history[] @relation("UserDeleted")
   invoice_assignment_products       invoice_assignment_product[]
-  doctorDeletedBy                   medicos[]                    @relation("UserDeletedBy")
-  pacientes                         pacientes[]
-  planos                            planos[]
+  assignment_code_unified           assignment_code_unified[]
   product_class                     product_class[]
-  product_kits                      product_kit[]
-  produtos                          produtos[]
-  user_admin                        user_admin?                  @relation("DeletedBy", fields: [deleted_by], references: [usu_id])
-  user                              user_admin[]                 @relation("DeletedBy")
 
   @@index([unidade_id], map: "user_admin_unidade")
-  @@index([deleted_by], map: "user_admin_deleted_by_fkey")
 }
 
 model usuario {
@@ -1289,24 +1364,20 @@ model vias {
 }
 
 model product_kit {
-  id              Int         @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   clinic_id       Int
   main_product_id Int
   product_id      Int
-  quantity        Int         @default(1)
-  created_at      DateTime    @default(now()) @db.Timestamp(0)
-  updated_at      DateTime?   @default(now()) @db.DateTime(0)
-  deleted_at      DateTime?   @db.DateTime(0)
+  quantity        Int       @default(1)
+  created_at      DateTime  @default(now()) @db.Timestamp(0)
+  updated_at      DateTime? @default(now()) @db.DateTime(0)
+  deleted_at      DateTime? @db.DateTime(0)
   deleted_by      Int?
-  clinic          unidades    @relation(fields: [clinic_id], references: [id], onUpdate: NoAction)
-  user_admin      user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
-  productKit      produtos    @relation("MainProductId", fields: [main_product_id], references: [id], onUpdate: NoAction)
-  product         produtos    @relation("ProductId", fields: [product_id], references: [id], onUpdate: NoAction)
 
-  @@index([clinic_id], map: "product_kit_clinic_id_fkey")
-  @@index([deleted_by], map: "product_kit_deleted_by_fkey")
-  @@index([main_product_id], map: "product_kit_main_product_id_fkey")
-  @@index([product_id], map: "product_kit_product_id_fkey")
+  clinic     unidades    @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  productKit produtos    @relation("MainProductId", fields: [main_product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  product    produtos    @relation("ProductId", fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  user_admin user_admin? @relation(fields: [deleted_by], references: [usu_id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model medico_regras {
@@ -1326,7 +1397,7 @@ model notificacoes {
   tipo                    notificacoes_tipo
   titulo                  String               @db.VarChar(255)
   mensagem                String               @db.VarChar(255)
-  status                  notificacoes_status? @default(dbgenerated("(ENVIADO)"))
+  status                  notificacoes_status? @default(ENVIADO)
   lote_repasse_id         String?              @db.VarChar(255)
   created_at              DateTime             @default(now()) @db.Timestamp(0)
   updated_at              DateTime?            @default(now()) @db.DateTime(0)
@@ -1347,17 +1418,18 @@ model regras {
   inativo           Boolean?              @default(false)
   created_at        DateTime              @default(now()) @db.Timestamp(0)
   updated_at        DateTime?             @default(now()) @db.DateTime(0)
+
+  // clinic unidades @relation(fields: [unidade_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // doctor_payment_products doctor_payment_products[]
 }
 
-enum tipo_produtos {
-  CON
-  DIA
-  EXA
-  HON
-  LAB
-  MAT
-  MED
-  TAX
+model integration {
+  id         Int      @id @default(autoincrement())
+  clinic_id  Int
+  key        String
+  created_at DateTime @default(now()) @db.Timestamp(0)
+
+  clinic unidades @relation(fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 enum agendas_tipo {
@@ -1393,6 +1465,13 @@ enum pacientes_tipo_usuario {
   NONE
   VIP
   INDESEJADO
+}
+
+enum lote_repasse_status {
+  PENDENTE
+  EM_ANALISE
+  REJEITADO
+  QUITADO
 }
 
 enum regras_tipo_regra {
@@ -1451,16 +1530,22 @@ enum doctor_payment_status {
   PAID
 }
 
-enum medicos_whatsapp_con {
+enum whatsapp_confirmation {
   NONE
   APPOINTMENT
   ORDER_ARRIVAL
   ORDER_ARRIVAL_TURN
 }
 
-enum medicos_whatsapp_exa {
-  NONE
-  APPOINTMENT
-  ORDER_ARRIVAL
-  ORDER_ARRIVAL_TURN
-}
+// enum tipo_conselho_medico {
+//  CRAS01 @map("CRAS - 01")
+//  COREN02 @map("COREN - 02")
+//  CRF03 @map("CRF - 03")
+//  CRFA04 @map("CRFA - 04")
+//  CREFITO05 @map("CREFITO - 05")
+//  CRM06 @map("CRM - 06")
+//  CRN07 @map("CRN - 07")
+//  CRO08 @map("CRO - 08")
+//  CRP09 @map("CRP - 09")
+//  OUT10 @map("OUT - 10")
+// }
